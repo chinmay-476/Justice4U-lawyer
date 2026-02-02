@@ -1,0 +1,127 @@
+<!-- PWA Install Button - Add this to any template where you want to show install option -->
+<div id="pwa-install-section" class="card mb-4" style="display: none;">
+    <div class="card-body text-center">
+        <h5 class="card-title">
+            <i class="bi bi-download me-2"></i>Install LegalMatch App
+        </h5>
+        <p class="card-text">
+            Install our app for a better experience with offline access and faster loading.
+        </p>
+        <button id="install-button" class="btn btn-primary">
+            <i class="bi bi-download me-2"></i>Install App
+        </button>
+        <button id="pwa-status-button" class="btn btn-outline-secondary ms-2" onclick="checkPWAStatus()">
+            <i class="bi bi-info-circle me-2"></i>PWA Status
+        </button>
+    </div>
+</div>
+
+<!-- PWA Status Modal -->
+<div class="modal fade" id="pwaStatusModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">PWA Status</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="pwa-status-content">
+                    <!-- Status content will be populated by JavaScript -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// PWA Status Check Function
+function checkPWAStatus() {
+    const statusContent = document.getElementById('pwa-status-content');
+    let statusHTML = '<div class="row">';
+    
+    // Check if running as PWA
+    const isPWA = window.matchMedia('(display-mode: standalone)').matches || 
+                  window.navigator.standalone === true;
+    
+    statusHTML += `
+        <div class="col-12 mb-3">
+            <h6><i class="bi bi-${isPWA ? 'check-circle text-success' : 'x-circle text-danger'} me-2"></i>PWA Mode</h6>
+            <p class="mb-0">${isPWA ? 'Running as installed app' : 'Running in browser'}</p>
+        </div>
+    `;
+    
+    // Check Service Worker
+    if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistration().then(registration => {
+            const hasSW = !!registration;
+            statusHTML += `
+                <div class="col-12 mb-3">
+                    <h6><i class="bi bi-${hasSW ? 'check-circle text-success' : 'x-circle text-danger'} me-2"></i>Service Worker</h6>
+                    <p class="mb-0">${hasSW ? 'Active and registered' : 'Not registered'}</p>
+                </div>
+            `;
+            
+            // Check Cache Storage
+            if ('caches' in window) {
+                caches.keys().then(cacheNames => {
+                    statusHTML += `
+                        <div class="col-12 mb-3">
+                            <h6><i class="bi bi-${cacheNames.length > 0 ? 'check-circle text-success' : 'x-circle text-danger'} me-2"></i>Cache Storage</h6>
+                            <p class="mb-0">${cacheNames.length > 0 ? `${cacheNames.length} cache(s) available` : 'No caches found'}</p>
+                        </div>
+                    `;
+                    
+                    // Check Offline Capability
+                    statusHTML += `
+                        <div class="col-12 mb-3">
+                            <h6><i class="bi bi-${navigator.onLine ? 'wifi text-success' : 'wifi-off text-warning'} me-2"></i>Network Status</h6>
+                            <p class="mb-0">${navigator.onLine ? 'Online' : 'Offline'}</p>
+                        </div>
+                    `;
+                    
+                    // Check Installability
+                    const canInstall = !!window.deferredPrompt;
+                    statusHTML += `
+                        <div class="col-12 mb-3">
+                            <h6><i class="bi bi-${canInstall ? 'check-circle text-success' : 'info-circle text-info'} me-2"></i>Installability</h6>
+                            <p class="mb-0">${canInstall ? 'Can be installed' : 'Already installed or not installable'}</p>
+                        </div>
+                    `;
+                    
+                    statusContent.innerHTML = statusHTML;
+                });
+            } else {
+                statusContent.innerHTML = statusHTML + '<p class="text-danger">Cache API not supported</p>';
+            }
+        });
+    } else {
+        statusContent.innerHTML = statusHTML + '<p class="text-danger">Service Worker not supported</p>';
+    }
+    
+    // Show modal
+    const modal = new bootstrap.Modal(document.getElementById('pwaStatusModal'));
+    modal.show();
+}
+
+// Show PWA install section if installable
+document.addEventListener('DOMContentLoaded', function() {
+    // Check if we can show install prompt
+    if (window.deferredPrompt) {
+        document.getElementById('pwa-install-section').style.display = 'block';
+    }
+    
+    // Listen for online/offline events
+    window.addEventListener('online', function() {
+        console.log('App is back online');
+        // You can add notification here
+    });
+    
+    window.addEventListener('offline', function() {
+        console.log('App is offline');
+        // You can add notification here
+    });
+});
+</script>

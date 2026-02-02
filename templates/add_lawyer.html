@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Lawyer - LegalMatch{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Your existing CSS here */
+/* ... (Keep all your styles here as before) ... */
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="page-header">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{{ url_for('home') }}">Home</a></li>
+                <li class="breadcrumb-item active" aria-current="page">Add New Lawyer</li>
+            </ol>
+        </nav>
+        <h1>Add New Lawyer</h1>
+        <p>Fill out the form below to add a new lawyer to the database.</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="form-container">
+        <form method="POST" action="{{ url_for('add_lawyer') }}">
+            {{ csrf_token() }}
+            <!-- Basic Information Section -->
+            <div class="mb-4">
+                <h3 class="section-header">Basic Information</h3>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="name" class="form-label required-field">Full Name</label>
+                            <input type="text" class="form-control" id="name" name="name" 
+                                   value="{{ data.name if data else '' }}" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="email" class="form-label required-field">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" 
+                                   value="{{ data.email if data else '' }}" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="phone" class="form-label required-field">Phone Number</label>
+                        <input type="tel" class="form-control" id="phone" name="phone"
+                               pattern="(\+91)?[789][0-9]{9}"
+                               title="Enter a valid Indian mobile number with 10 digits, optionally starting with +91"
+                               value="{{ data.phone if data else '' }}" required>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="location" class="form-label required-field">Location</label>
+                        <input type="text" class="form-control" id="location" name="location" 
+                               value="{{ data.location if data else '' }}" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="photo" class="form-label">Photo URL</label>
+                    <input type="url" class="form-control" id="photo" name="photo" 
+                           value="{{ data.photo if data else '' }}">
+                    <div class="form-text">Leave blank for default placeholder image</div>
+                </div>
+            </div>
+
+            <!-- Professional Information Section -->
+            <div class="mb-4">
+                <h3 class="section-header">Professional Information</h3>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="specialization" class="form-label required-field">Specialization</label>
+                            <select class="form-select" id="specialization" name="specialization" required>
+                                <option value="">Select Specialization</option>
+                                <option value="Corporate Law" {{ 'selected' if data and data.specialization == 'Corporate Law' else '' }}>Corporate Law</option>
+                                <option value="Family Law" {{ 'selected' if data and data.specialization == 'Family Law' else '' }}>Family Law</option>
+                                <option value="Criminal Defense" {{ 'selected' if data and data.specialization == 'Criminal Defense' else '' }}>Criminal Defense</option>
+                                <option value="Real Estate Law" {{ 'selected' if data and data.specialization == 'Real Estate Law' else '' }}>Real Estate Law</option>
+                                <option value="Personal Injury" {{ 'selected' if data and data.specialization == 'Personal Injury' else '' }}>Personal Injury</option>
+                                <option value="Immigration Law" {{ 'selected' if data and data.specialization == 'Immigration Law' else '' }}>Immigration Law</option>
+                                <option value="Employment Law" {{ 'selected' if data and data.specialization == 'Employment Law' else '' }}>Employment Law</option>
+                                <option value="Tax Law" {{ 'selected' if data and data.specialization == 'Tax Law' else '' }}>Tax Law</option>
+                                <option value="Bankruptcy Law" {{ 'selected' if data and data.specialization == 'Bankruptcy Law' else '' }}>Bankruptcy Law</option>
+                                <option value="Intellectual Property" {{ 'selected' if data and data.specialization == 'Intellectual Property' else '' }}>Intellectual Property</option>
+                                <option value="Environmental Law" {{ 'selected' if data and data.specialization == 'Environmental Law' else '' }}>Environmental Law</option>
+                                <option value="Health Care Law" {{ 'selected' if data and data.specialization == 'Health Care Law' else '' }}>Health Care Law</option>
+                                <option value="Contract Law" {{ 'selected' if data and data.specialization == 'Contract Law' else '' }}>Contract Law</option>
+                                <option value="Other" {{ 'selected' if data and data.specialization == 'Other' else '' }}>Other</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="years_experience" class="form-label required-field">Years of Experience</label>
+                            <input type="number" class="form-control" id="years_experience" name="years_experience" 
+                                   min="0" max="50" value="{{ data.years_experience if data else '' }}" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="rating" class="form-label required-field">Rating (0.0 - 5.0)</label>
+                            <input type="number" class="form-control" id="rating" name="rating" 
+                                   min="0" max="5" step="0.1" value="{{ data.rating if data else '' }}" required>
+                            <div class="form-text">Enter a decimal value between 0.0 and 5.0</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="keywords" class="form-label required-field">Keywords (comma-separated)</label>
+                            <input type="text" class="form-control" id="keywords" name="keywords" 
+                                   value="{{ data.keywords if data else '' }}" required>
+                            <div class="form-text">Enter relevant keywords separated by commas for better matching</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Biography Section -->
+            <div class="mb-4">
+                <h3 class="section-header">Biography</h3>
+                <div class="form-group">
+                    <label for="bio" class="form-label required-field">Professional Biography</label>
+                    <textarea class="form-control" id="bio" name="bio" rows="6" required>{{ data.bio if data else '' }}</textarea>
+                    <div class="form-text">Provide a comprehensive overview that will help clients understand this lawyer's qualifications and experience.</div>
+                </div>
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-2"></i>Add Lawyer
+                </button>
+                <a href="{{ url_for('home') }}" class="btn btn-secondary">
+                    <i class="bi bi-x-circle me-2"></i>Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    const locationInput = document.getElementById('location');
+    const phoneInput = document.getElementById('phone');
+
+    locationInput.addEventListener('input', function() {
+        const loc = locationInput.value.trim().toLowerCase();
+
+        if (loc === 'india') {
+            phoneInput.pattern = "(\\+91)?[789][0-9]{9}";
+            phoneInput.title = "Enter a valid Indian mobile number with 10 digits, optionally starting with +91";
+        } else if (loc === 'usa') {
+            phoneInput.pattern = "\\+1[0-9]{10}";
+            phoneInput.title = "Enter a valid US phone number starting with +1 and 10 digits";
+        } else {
+            phoneInput.pattern = "\\d{7,15}";
+            phoneInput.title = "Enter a valid phone number with 7 to 15 digits";
+        }
+    });
+</script>
+{% endblock %}

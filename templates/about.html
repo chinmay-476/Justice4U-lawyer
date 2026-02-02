@@ -1,0 +1,415 @@
+{% extends "base_public.html" %}
+{% block title %}About Us - LegalMatch{% endblock %}
+
+{% block extra_css %}
+<style>
+    .hero-section {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 80px 0;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .hero-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/><circle cx="50" cy="10" r="0.5" fill="white" opacity="0.1"/><circle cx="10" cy="60" r="0.5" fill="white" opacity="0.1"/><circle cx="90" cy="40" r="0.5" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+        opacity: 0.3;
+    }
+    
+    .hero-content {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .feature-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        height: 100%;
+        border: none;
+    }
+    
+    .feature-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+    }
+    
+    .feature-icon {
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 2rem;
+        color: white;
+    }
+    
+    .stats-section {
+        background: #f8f9fa;
+        padding: 60px 0;
+    }
+    
+    .stat-item {
+        text-align: center;
+        padding: 2rem;
+    }
+    
+    .stat-number {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        color: #6c757d;
+        font-size: 1.1rem;
+        font-weight: 500;
+    }
+    
+    .mission-section {
+        padding: 80px 0;
+        background: white;
+    }
+    
+    .mission-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 20px;
+        padding: 3rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .mission-card::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+        animation: float 6s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-20px) rotate(180deg); }
+    }
+    
+    .team-section {
+        background: #f8f9fa;
+        padding: 80px 0;
+    }
+    
+    .team-card {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        text-align: center;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        transition: transform 0.3s ease;
+    }
+    
+    .team-card:hover {
+        transform: translateY(-5px);
+    }
+    
+    .team-avatar {
+        width: 120px;
+        height: 120px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 3rem;
+        color: white;
+        font-weight: bold;
+    }
+    
+    .cta-section {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 80px 0;
+        text-align: center;
+    }
+    
+    .btn-glow {
+        background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+        border: none;
+        padding: 15px 40px;
+        font-size: 1.1rem;
+        font-weight: 600;
+        border-radius: 50px;
+        color: white;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+        box-shadow: 0 10px 30px rgba(255, 107, 107, 0.3);
+    }
+    
+    .btn-glow:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 40px rgba(255, 107, 107, 0.4);
+        color: white;
+    }
+    
+    .legal-icon {
+        font-size: 4rem;
+        color: #1e3c72;
+        margin-bottom: 1rem;
+    }
+    
+    .section-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #1e3c72;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+    
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80px;
+        height: 4px;
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border-radius: 2px;
+    }
+    
+    .text-gradient {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <div class="hero-content">
+                    <h1 class="display-4 fw-bold mb-4">
+                        <i class="bi bi-scales me-3"></i>LegalMatch
+                    </h1>
+                    <p class="lead mb-4">Connecting clients with qualified lawyers through India's most trusted legal platform</p>
+                    <p class="mb-4">Experience the future of legal services with our innovative platform that makes finding the right lawyer simple, secure, and efficient.</p>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <a href="{{ url_for('lawyers') }}" class="btn btn-light btn-lg px-4">
+                            <i class="bi bi-search me-2"></i>Find Lawyers
+                        </a>
+                        <a href="{{ url_for('lawyer_registration') }}" class="btn btn-outline-light btn-lg px-4">
+                            <i class="bi bi-person-plus me-2"></i>Join as Lawyer
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6 text-center">
+                <div class="legal-icon">
+                    <i class="bi bi-shield-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Stats Section -->
+<section class="stats-section">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">500+</div>
+                    <div class="stat-label">Verified Lawyers</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">10K+</div>
+                    <div class="stat-label">Successful Cases</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">25+</div>
+                    <div class="stat-label">Legal Specializations</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="stat-item">
+                    <div class="stat-number">98%</div>
+                    <div class="stat-label">Client Satisfaction</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">Why Choose LegalMatch?</h2>
+            <p class="lead text-muted">We provide comprehensive legal solutions with cutting-edge technology</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Verified Professionals</h4>
+                    <p class="text-muted">All lawyers are thoroughly verified with proper credentials, licenses, and background checks to ensure you get the best legal representation.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-search"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Smart Search</h4>
+                    <p class="text-muted">Advanced filtering system helps you find lawyers by specialization, location, experience, and ratings to match your specific needs.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-chat-dots"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Direct Communication</h4>
+                    <p class="text-muted">Connect directly with lawyers through our secure messaging system, document sharing, and consultation scheduling.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-lock"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Secure & Confidential</h4>
+                    <p class="text-muted">Your legal matters are protected with enterprise-grade security and strict confidentiality protocols.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-graph-up"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Performance Tracking</h4>
+                    <p class="text-muted">View lawyer success rates, case statistics, and client reviews to make informed decisions.</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="bi bi-headset"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">24/7 Support</h4>
+                    <p class="text-muted">Round-the-clock customer support to help you navigate the platform and resolve any issues quickly.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Mission Section -->
+<section class="mission-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="mission-card">
+                    <h2 class="fw-bold mb-4">Our Mission</h2>
+                    <p class="lead mb-4">To democratize access to legal services by connecting clients with qualified lawyers through innovative technology, ensuring justice is accessible to everyone regardless of their background or financial status.</p>
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <h4 class="fw-bold">Accessibility</h4>
+                            <p>Making legal services accessible to all</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h4 class="fw-bold">Transparency</h4>
+                            <p>Clear pricing and lawyer credentials</p>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <h4 class="fw-bold">Excellence</h4>
+                            <p>Connecting clients with top-tier lawyers</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="text-center mb-5">
+            <h2 class="section-title">How It Works</h2>
+            <p class="lead text-muted">Simple steps to find your perfect legal match</p>
+        </div>
+        <div class="row g-4">
+            <div class="col-lg-4 text-center">
+                <div class="feature-icon mx-auto mb-3">
+                    <i class="bi bi-search"></i>
+                </div>
+                <h4 class="fw-bold mb-3">1. Search & Filter</h4>
+                <p class="text-muted">Use our advanced search to find lawyers by specialization, location, experience, and ratings that match your legal needs.</p>
+            </div>
+            <div class="col-lg-4 text-center">
+                <div class="feature-icon mx-auto mb-3">
+                    <i class="bi bi-person-check"></i>
+                </div>
+                <h4 class="fw-bold mb-3">2. Review Profiles</h4>
+                <p class="text-muted">Browse detailed lawyer profiles including qualifications, experience, case success rates, and client reviews.</p>
+            </div>
+            <div class="col-lg-4 text-center">
+                <div class="feature-icon mx-auto mb-3">
+                    <i class="bi bi-chat-dots"></i>
+                </div>
+                <h4 class="fw-bold mb-3">3. Connect & Consult</h4>
+                <p class="text-muted">Contact lawyers directly through our platform, share documents securely, and schedule consultations.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="cta-section">
+    <div class="container">
+        <div class="row justify-content-center text-center">
+            <div class="col-lg-8">
+                <h2 class="fw-bold mb-4">Ready to Find Your Legal Match?</h2>
+                <p class="lead mb-5">Join thousands of satisfied clients who found their perfect lawyer through LegalMatch</p>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="{{ url_for('lawyers') }}" class="btn-glow">
+                        <i class="bi bi-search me-2"></i>Find Lawyers Now
+                    </a>
+                    <a href="{{ url_for('register_user') }}" class="btn btn-outline-light btn-lg px-4">
+                        <i class="bi bi-person-plus me-2"></i>Create Account
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

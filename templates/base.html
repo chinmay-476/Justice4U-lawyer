@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#007bff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="LegalMatch">
+    <meta name="msapplication-TileColor" content="#007bff">
+    <meta name="msapplication-config" content="/static/icons/browserconfig.xml">
+    
+    <title>{% block title %}LegalMatch - Lawyer Platform{% endblock %}</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    
+    <!-- Apple Touch Icons -->
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+    <link rel="apple-touch-icon" sizes="152x152" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+    <link rel="apple-touch-icon" sizes="167x167" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='icons/icon-192x192.png') }}">
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css" rel="stylesheet">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+    
+    <!-- Custom CSS -->
+    <style>
+        {% block styles %}
+        /* Base Styles */
+        .container-fluid {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+
+        .page-header {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            color: white;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+        }
+
+        .page-header h1 {
+            font-weight: 700;
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .page-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .card {
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 123, 255, 0.15);
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+            transform: translateY(-1px);
+        }
+
+        .btn {
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            padding: 0.5rem 1rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #007bff, #0056b3);
+            border: none;
+            box-shadow: 0 2px 10px rgba(0, 123, 255, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #0056b3, #004085);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+        }
+
+        .badge {
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+
+        .bg-success {
+            background: linear-gradient(45deg, #28a745, #34ce57) !important;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .page-header h1 {
+                font-size: 2rem;
+            }
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #007bff, #0056b3);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #0056b3, #004085);
+        }
+
+        /* Lawyer Profile Photo */
+        .lawyer-profile-photo {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .lawyer-photo {
+            height: 200px;
+            object-fit: cover;
+        }
+        {% endblock %}
+    </style>
+
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    {% if not hide_chrome %}
+    <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="sidebar-brand">
+                <i class="bi bi-scales"></i>
+                <span>LegalMatch</span>
+            </div>
+            <button class="sidebar-toggle d-md-none" id="sidebarToggle">
+                <i class="bi bi-x"></i>
+            </button>
+        </div>
+        
+        <nav class="sidebar-nav">
+            <div class="d-flex flex-column gap-2">
+                <a class="btn btn-outline-light btn-sm text-start" href="{{ url_for('home') }}">
+                    <i class="bi bi-house me-2"></i>
+                    <span>Home</span>
+                </a>
+                <a class="btn btn-outline-light btn-sm text-start" href="{{ url_for('lawyers') }}">
+                    <i class="bi bi-people me-2"></i>
+                    <span>Find Lawyers</span>
+                </a>
+                <a class="btn btn-outline-light btn-sm text-start" href="{{ url_for('contact') }}">
+                    <i class="bi bi-envelope me-2"></i>
+                    <span>Contact Us</span>
+                </a>
+                <a class="btn btn-outline-light btn-sm text-start" href="{{ url_for('lawyer_registration') }}">
+                    <i class="bi bi-person-plus me-2"></i>
+                    <span>Join as Lawyer</span>
+                </a>
+                {% if request.cookies.get('user_id') %}
+                <a class="btn btn-outline-light btn-sm text-start" href="{{ url_for('logout_user') }}">
+                    <i class="bi bi-box-arrow-right me-2"></i>
+                    <span>Logout</span>
+                </a>
+                {% else %}
+                <a class="btn btn-outline-light btn-sm text-start" href="{{ url_for('login_user') }}">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                    <span>Login</span>
+                </a>
+                <a class="btn btn-outline-light btn-sm text-start" href="{{ url_for('register_user') }}">
+                    <i class="bi bi-person-add me-2"></i>
+                    <span>Register</span>
+                </a>
+                {% endif %}
+                {% if request.cookies.get('is_admin') == '1' %}
+                <a class="btn btn-outline-light btn-sm text-start" href="{{ url_for('admin_dashboard') }}">
+                    <i class="bi bi-speedometer2 me-2"></i>
+                    <span>Admin Panel</span>
+                </a>
+                <a class="btn btn-outline-light btn-sm text-start" href="{{ url_for('admin_logout') }}">
+                    <i class="bi bi-box-arrow-right me-2"></i>
+                    <span>Admin Logout</span>
+                </a>
+                {% else %}
+                <a class="btn btn-outline-light btn-sm text-start" href="{{ url_for('admin_login') }}">
+                    <i class="bi bi-shield-lock me-2"></i>
+                    <span>Admin Login</span>
+                </a>
+                {% endif %}
+            </div>
+        </nav>
+        
+        <div class="sidebar-footer">
+            <div class="text-center">
+                <small class="text-muted">LegalMatch Platform</small>
+                <br>
+                <small class="text-muted">v2.0</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sidebar Overlay (Mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+    <!-- Top Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary" {% if hide_chrome %}style="display:none"{% endif %}>
+        <div class="container-fluid">
+            <button class="btn btn-outline-light me-3" id="mobileSidebarToggle">
+                <i class="bi bi-list"></i>
+            </button>
+            <a class="navbar-brand fw-bold" href="{{ url_for('home') }}">
+                <i class="bi bi-scales me-2"></i>LegalMatch
+            </a>
+            <button class="btn btn-outline-light ms-auto d-none d-md-inline" id="navbarHideToggle">
+                <i class="bi bi-eye-slash"></i>
+            </button>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Main Content -->
+    <main class="main-content" {% if hide_chrome %}style="margin-left:0"{% endif %}>
+        <div class="content-wrapper">
+            {% block content %}
+            <!-- Content will be inserted here by child templates -->
+            {% endblock %}
+        </div>
+    </main>
+
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Components -->
+    <script src="{{ url_for('static', filename='components.js') }}"></script>
+    
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    
+    <!-- PWA Service Worker Registration -->
+    <script>
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+                navigator.serviceWorker.register('{{ url_for("static", filename="service-worker.js") }}')
+                    .then(function(registration) {
+                        console.log('ServiceWorker registration successful with scope: ', registration.scope);
+                        
+                        // Check for updates
+                        registration.addEventListener('updatefound', function() {
+                            const newWorker = registration.installing;
+                            newWorker.addEventListener('statechange', function() {
+                                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                                    // New content is available, show update notification
+                                    if (confirm('New version available! Reload to update?')) {
+                                        window.location.reload();
+                                    }
+                                }
+                            });
+                        });
+                    })
+                    .catch(function(err) {
+                        console.log('ServiceWorker registration failed: ', err);
+                    });
+            });
+        }
+        
+        // PWA Install Prompt
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            
+            // Show install button or notification
+            const installButton = document.getElementById('install-button');
+            if (installButton) {
+                installButton.style.display = 'block';
+                installButton.addEventListener('click', async () => {
+                    if (deferredPrompt) {
+                        deferredPrompt.prompt();
+                        const { outcome } = await deferredPrompt.userChoice;
+                        console.log(`User response to the install prompt: ${outcome}`);
+                        deferredPrompt = null;
+                    }
+                });
+            }
+        });
+        
+        // Track PWA installation
+        window.addEventListener('appinstalled', (evt) => {
+            console.log('PWA was installed');
+            // Hide install button
+            const installButton = document.getElementById('install-button');
+            if (installButton) {
+                installButton.style.display = 'none';
+            }
+        });
+    </script>
+    
+    <!-- Custom JS -->
+    <script>
+        // Sidebar Toggle Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.getElementById('sidebar');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+            const mobileSidebarToggle = document.getElementById('mobileSidebarToggle');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            
+            // Mobile sidebar toggle
+            if (mobileSidebarToggle) {
+                mobileSidebarToggle.addEventListener('click', function() {
+                    sidebar.classList.add('show');
+                    sidebarOverlay.classList.add('show');
+                    document.body.style.overflow = 'hidden';
+                });
+            }
+            
+            // Close sidebar buttons
+            function closeSidebar() {
+                sidebar.classList.remove('show');
+                sidebarOverlay.classList.remove('show');
+                document.body.style.overflow = '';
+            }
+            
+            if (sidebarToggle) {
+                sidebarToggle.addEventListener('click', closeSidebar);
+            }
+            
+            if (sidebarOverlay) {
+                sidebarOverlay.addEventListener('click', closeSidebar);
+            }
+            
+            // Set active navigation link
+            const currentPath = window.location.pathname;
+            const navLinks = document.querySelectorAll('.sidebar-nav .nav-link');
+            
+            navLinks.forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    link.classList.add('active');
+                }
+            });
+            
+            // Close sidebar on window resize if it becomes desktop
+            window.addEventListener('resize', function() {
+                if (window.innerWidth >= 768) {
+                    closeSidebar();
+                }
+            });
+
+            // Navbar hide/unhide toggle
+            const mainContent = document.querySelector('.main-content');
+            const navBar = document.querySelector('nav.navbar');
+            const hideToggle = document.getElementById('navbarHideToggle');
+            let navHidden = false;
+            if (hideToggle) {
+                hideToggle.addEventListener('click', function() {
+                    navHidden = !navHidden;
+                    navBar.style.display = navHidden ? 'none' : '';
+                    this.innerHTML = navHidden ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+                });
+            }
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>

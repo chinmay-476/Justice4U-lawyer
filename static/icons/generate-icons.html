@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LegalMatch Icon Generator</title>
+</head>
+<body>
+    <h1>LegalMatch PWA Icon Generator</h1>
+    <p>This page generates PNG icons for the LegalMatch PWA.</p>
+    
+    <canvas id="icon192" width="192" height="192" style="border: 1px solid #ccc; margin: 10px;"></canvas>
+    <canvas id="icon512" width="512" height="512" style="border: 1px solid #ccc; margin: 10px;"></canvas>
+    
+    <br>
+    <button onclick="generateIcons()">Generate Icons</button>
+    <button onclick="downloadIcon('icon192', 'icon-192x192.png')">Download 192x192</button>
+    <button onclick="downloadIcon('icon512', 'icon-512x512.png')">Download 512x512</button>
+    
+    <script>
+        function generateIcons() {
+            // Generate 192x192 icon
+            const canvas192 = document.getElementById('icon192');
+            const ctx192 = canvas192.getContext('2d');
+            drawIcon(ctx192, 192);
+            
+            // Generate 512x512 icon
+            const canvas512 = document.getElementById('icon512');
+            const ctx512 = canvas512.getContext('2d');
+            drawIcon(ctx512, 512);
+        }
+        
+        function drawIcon(ctx, size) {
+            const centerX = size / 2;
+            const centerY = size / 2;
+            const scale = size / 192; // Scale factor based on 192px base
+            
+            // Clear canvas
+            ctx.clearRect(0, 0, size, size);
+            
+            // Background gradient
+            const gradient = ctx.createLinearGradient(0, 0, size, size);
+            gradient.addColorStop(0, '#007bff');
+            gradient.addColorStop(1, '#0056b3');
+            
+            // Background
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, size, size);
+            
+            // Scales of Justice
+            ctx.fillStyle = 'white';
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 2 * scale;
+            
+            // Base
+            ctx.fillRect(centerX - 4 * scale, centerY + 40 * scale, 8 * scale, 20 * scale);
+            
+            // Crossbar
+            ctx.fillRect(centerX - 30 * scale, centerY + 20 * scale, 60 * scale, 4 * scale);
+            
+            // Left scale
+            ctx.beginPath();
+            ctx.ellipse(centerX - 20 * scale, centerY + 15 * scale, 12 * scale, 3 * scale, 0, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.fillRect(centerX - 32 * scale, centerY + 15 * scale, 12 * scale, 10 * scale);
+            
+            // Right scale
+            ctx.beginPath();
+            ctx.ellipse(centerX + 20 * scale, centerY + 15 * scale, 12 * scale, 3 * scale, 0, 0, 2 * Math.PI);
+            ctx.fill();
+            
+            ctx.fillRect(centerX + 20 * scale, centerY + 15 * scale, 12 * scale, 10 * scale);
+            
+            // Chains
+            ctx.beginPath();
+            ctx.moveTo(centerX - 20 * scale, centerY + 15 * scale);
+            ctx.lineTo(centerX - 20 * scale, centerY + 20 * scale);
+            ctx.stroke();
+            
+            ctx.beginPath();
+            ctx.moveTo(centerX + 20 * scale, centerY + 15 * scale);
+            ctx.lineTo(centerX + 20 * scale, centerY + 20 * scale);
+            ctx.stroke();
+            
+            // Text
+            ctx.fillStyle = 'white';
+            ctx.font = `${16 * scale}px Arial`;
+            ctx.textAlign = 'center';
+            ctx.fillText('LegalMatch', centerX, centerY + 40 * scale);
+        }
+        
+        function downloadIcon(canvasId, filename) {
+            const canvas = document.getElementById(canvasId);
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+        
+        // Generate icons on page load
+        window.onload = generateIcons;
+    </script>
+</body>
+</html>

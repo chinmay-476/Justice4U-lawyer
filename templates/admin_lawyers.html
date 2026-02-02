@@ -1,0 +1,641 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Lawyer Management - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">Lawyer Management</h1>
+                    <p class="text-muted">Manage all verified lawyers and their profiles</p>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-primary me-2" id="lawyerCount">Loading...</span>
+                    <button class="btn btn-outline-primary" onclick="refreshData()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="totalLawyers">0</h4>
+                            <p class="card-text">Total Lawyers</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-people fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="verifiedLawyers">0</h4>
+                            <p class="card-text">Verified Lawyers</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-check-circle fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="pendingLawyers">0</h4>
+                            <p class="card-text">Pending Lawyers</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-clock fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="avgRating">0.0</h4>
+                            <p class="card-text">Average Rating</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-star fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel me-2"></i>Search & Filter Lawyers
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-lg-4 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-search me-1"></i>Search
+                                </label>
+                                <input type="text" class="form-control" id="searchInput" 
+                                       placeholder="Name, email, specialization...">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-briefcase me-1"></i>Specialization
+                                </label>
+                                <select class="form-select" id="specializationFilter">
+                                    <option value="">All Specializations</option>
+                                    <option value="Criminal Law">Criminal Law</option>
+                                    <option value="Family Law">Family Law</option>
+                                    <option value="Corporate Law">Corporate Law</option>
+                                    <option value="Personal Injury">Personal Injury</option>
+                                    <option value="Real Estate Law">Real Estate Law</option>
+                                    <option value="Employment Law">Employment Law</option>
+                                    <option value="Immigration Law">Immigration Law</option>
+                                    <option value="Tax Law">Tax Law</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-flag me-1"></i>Status
+                                </label>
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="verified">Verified</option>
+                                    <option value="pending">Pending</option>
+                                    <option value="rejected">Rejected</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-sort-down me-1"></i>Sort By
+                                </label>
+                                <select class="form-select" id="sortFilter">
+                                    <option value="rating">Rating (High to Low)</option>
+                                    <option value="experience">Experience (High to Low)</option>
+                                    <option value="name">Name (A-Z)</option>
+                                    <option value="newest">Newest First</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button class="btn btn-outline-secondary" id="clearFilters">
+                                        <i class="bi bi-arrow-clockwise me-1"></i>Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lawyers Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-people me-2"></i>All Lawyers
+                    </h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small" id="filterStatus">Showing all lawyers</span>
+                        <button class="btn btn-outline-primary btn-sm" onclick="exportLawyers()">
+                            <i class="bi bi-download me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="lawyersTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Lawyer</th>
+                                    <th>Contact</th>
+                                    <th>Specialization</th>
+                                    <th>Experience</th>
+                                    <th>Rating</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="lawyersTableBody">
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Lawyers pagination">
+                <ul class="pagination justify-content-center" id="pagination">
+                    <!-- Pagination items will be generated by JavaScript -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Lawyer Details Modal -->
+<div class="modal fade" id="lawyerDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Lawyer Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="lawyerDetailsContent">
+                <!-- Lawyer details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allLawyers = [];
+let filteredLawyers = [];
+let currentPage = 1;
+const lawyersPerPage = 10;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadLawyers();
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    document.getElementById('searchInput').addEventListener('input', debounce(filterAndPaginate, 300));
+    document.getElementById('specializationFilter').addEventListener('change', filterAndPaginate);
+    document.getElementById('statusFilter').addEventListener('change', filterAndPaginate);
+    document.getElementById('sortFilter').addEventListener('change', sortAndPaginate);
+    document.getElementById('clearFilters').addEventListener('click', clearAllFilters);
+}
+
+async function loadLawyers() {
+    try {
+        const response = await fetch('/admin/api/lawyers');
+        if (!response.ok) throw new Error('Failed to load lawyers');
+        
+        allLawyers = await response.json();
+        filteredLawyers = [...allLawyers];
+        
+        updateStatistics();
+        updateDisplay();
+        updateFilterStatus();
+        
+    } catch (error) {
+        console.error('Error loading lawyers:', error);
+        showError('Failed to load lawyers data');
+    }
+}
+
+function updateStatistics() {
+    const totalLawyers = allLawyers.length;
+    const verifiedLawyers = allLawyers.filter(lawyer => lawyer.status === 'verified').length;
+    const pendingLawyers = allLawyers.filter(lawyer => lawyer.status === 'pending').length;
+    const avgRating = allLawyers.length > 0 ? 
+        (allLawyers.reduce((sum, lawyer) => sum + (lawyer.rating || 0), 0) / allLawyers.length).toFixed(1) : 0;
+    
+    document.getElementById('totalLawyers').textContent = totalLawyers;
+    document.getElementById('verifiedLawyers').textContent = verifiedLawyers;
+    document.getElementById('pendingLawyers').textContent = pendingLawyers;
+    document.getElementById('avgRating').textContent = avgRating;
+    document.getElementById('lawyerCount').textContent = `${totalLawyers} lawyers found`;
+}
+
+function filterAndPaginate() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const specializationFilter = document.getElementById('specializationFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    
+    filteredLawyers = allLawyers.filter(lawyer => {
+        // Search filter
+        const matchesSearch = !searchTerm || 
+            lawyer.name.toLowerCase().includes(searchTerm) ||
+            lawyer.email.toLowerCase().includes(searchTerm) ||
+            lawyer.specialization.toLowerCase().includes(searchTerm);
+        
+        // Specialization filter
+        const matchesSpecialization = !specializationFilter || lawyer.specialization === specializationFilter;
+        
+        // Status filter
+        const matchesStatus = !statusFilter || lawyer.status === statusFilter;
+        
+        return matchesSearch && matchesSpecialization && matchesStatus;
+    });
+    
+    currentPage = 1;
+    updateDisplay();
+    updateFilterStatus();
+}
+
+function sortAndPaginate() {
+    const sortBy = document.getElementById('sortFilter').value;
+    
+    filteredLawyers.sort((a, b) => {
+        switch (sortBy) {
+            case 'name':
+                return a.name.localeCompare(b.name);
+            case 'experience':
+                return (b.years_experience || 0) - (a.years_experience || 0);
+            case 'newest':
+                return new Date(b.created_at) - new Date(a.created_at);
+            case 'rating':
+            default:
+                return (b.rating || 0) - (a.rating || 0);
+        }
+    });
+    
+    currentPage = 1;
+    updateDisplay();
+}
+
+function updateDisplay() {
+    const startIndex = (currentPage - 1) * lawyersPerPage;
+    const endIndex = startIndex + lawyersPerPage;
+    const lawyersToShow = filteredLawyers.slice(startIndex, endIndex);
+    
+    const tbody = document.getElementById('lawyersTableBody');
+    
+    if (lawyersToShow.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <i class="bi bi-search text-muted fs-1"></i>
+                    <h5 class="text-muted mt-3">No lawyers found</h5>
+                    <p class="text-muted">Try adjusting your search criteria</p>
+                </td>
+            </tr>
+        `;
+    } else {
+        tbody.innerHTML = lawyersToShow.map(lawyer => `
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3">
+                            ${lawyer.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <h6 class="mb-0">${lawyer.name}</h6>
+                            <small class="text-muted">ID: ${lawyer.id}</small>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div>
+                        <div class="small">${lawyer.email}</div>
+                        ${lawyer.phone ? `<div class="small text-muted">${lawyer.phone}</div>` : ''}
+                    </div>
+                </td>
+                <td>
+                    <span class="badge bg-info">${lawyer.specialization}</span>
+                </td>
+                <td>
+                    <div class="small">${lawyer.years_experience || 0} years</div>
+                </td>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <span class="me-1">${lawyer.rating || 0}</span>
+                        <i class="bi bi-star-fill text-warning"></i>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge ${getStatusBadgeClass(lawyer.status)}">
+                        ${lawyer.status.toUpperCase()}
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-primary btn-sm" onclick="viewLawyerDetails(${lawyer.id})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-warning btn-sm" onclick="updateLawyerStatus(${lawyer.id}, '${lawyer.status === 'verified' ? 'pending' : 'verified'}')">
+                            <i class="bi bi-${lawyer.status === 'verified' ? 'pause' : 'play'}"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    updatePagination();
+}
+
+function getStatusBadgeClass(status) {
+    switch (status) {
+        case 'verified': return 'bg-success';
+        case 'pending': return 'bg-warning';
+        case 'rejected': return 'bg-danger';
+        default: return 'bg-secondary';
+    }
+}
+
+function updatePagination() {
+    const totalPages = Math.ceil(filteredLawyers.length / lawyersPerPage);
+    const pagination = document.getElementById('pagination');
+    
+    if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+    
+    let paginationHTML = '';
+    
+    // Previous button
+    paginationHTML += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>
+        </li>
+    `;
+    
+    // Page numbers
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" data-page="${i}">${i}</a>
+            </li>
+        `;
+    }
+    
+    // Next button
+    paginationHTML += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>
+        </li>
+    `;
+    
+    pagination.innerHTML = paginationHTML;
+    
+    // Add click event listeners
+    pagination.querySelectorAll('.page-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const page = parseInt(this.dataset.page);
+            if (page && page !== currentPage && page >= 1 && page <= totalPages) {
+                currentPage = page;
+                updateDisplay();
+            }
+        });
+    });
+}
+
+function updateFilterStatus() {
+    const filters = [];
+    const searchTerm = document.getElementById('searchInput').value;
+    const specialization = document.getElementById('specializationFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    
+    if (searchTerm) filters.push(`Search: "${searchTerm}"`);
+    if (specialization) filters.push(`Specialization: ${specialization}`);
+    if (status) filters.push(`Status: ${status}`);
+    
+    const statusText = filters.length > 0 ? `Filtered by: ${filters.join(', ')}` : 'Showing all lawyers';
+    document.getElementById('filterStatus').textContent = statusText;
+}
+
+function clearAllFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('specializationFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('sortFilter').value = 'rating';
+    
+    filteredLawyers = [...allLawyers];
+    currentPage = 1;
+    updateDisplay();
+    updateFilterStatus();
+}
+
+function viewLawyerDetails(lawyerId) {
+    const lawyer = allLawyers.find(l => l.id === lawyerId);
+    if (!lawyer) return;
+    
+    const content = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Personal Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Name:</strong></td><td>${lawyer.name}</td></tr>
+                    <tr><td><strong>Email:</strong></td><td>${lawyer.email}</td></tr>
+                    <tr><td><strong>Phone:</strong></td><td>${lawyer.phone || 'Not provided'}</td></tr>
+                    <tr><td><strong>Location:</strong></td><td>${lawyer.location || 'Not specified'}</td></tr>
+                    <tr><td><strong>Status:</strong></td><td><span class="badge ${getStatusBadgeClass(lawyer.status)}">${lawyer.status.toUpperCase()}</span></td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Professional Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Specialization:</strong></td><td>${lawyer.specialization}</td></tr>
+                    <tr><td><strong>Experience:</strong></td><td>${lawyer.years_experience || 0} years</td></tr>
+                    <tr><td><strong>Rating:</strong></td><td>${lawyer.rating || 0} ⭐</td></tr>
+                    <tr><td><strong>Consultation Fee:</strong></td><td>${lawyer.consultation_fee ? '₹' + lawyer.consultation_fee : 'Not specified'}</td></tr>
+                    <tr><td><strong>Created:</strong></td><td>${new Date(lawyer.created_at).toLocaleString()}</td></tr>
+                </table>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6>Bio</h6>
+                <div class="border rounded p-3 bg-light">
+                    ${lawyer.bio || 'No bio provided'}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('lawyerDetailsContent').innerHTML = content;
+    new bootstrap.Modal(document.getElementById('lawyerDetailsModal')).show();
+}
+
+async function updateLawyerStatus(lawyerId, newStatus) {
+    if (!confirm(`Are you sure you want to change this lawyer's status to ${newStatus}?`)) return;
+    
+    try {
+        const response = await fetch(`/api/lawyers/${lawyerId}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status: newStatus })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            // Update local data
+            const lawyer = allLawyers.find(l => l.id === lawyerId);
+            if (lawyer) {
+                lawyer.status = newStatus;
+            }
+            
+            updateStatistics();
+            updateDisplay();
+            
+            // Show success message
+            const toast = document.createElement('div');
+            toast.className = 'toast align-items-center text-white bg-success border-0';
+            toast.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">Lawyer status updated successfully</div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            new bootstrap.Toast(toast).show();
+        } else {
+            alert('Error updating lawyer status: ' + data.error);
+        }
+    } catch (error) {
+        alert('Error updating lawyer status');
+    }
+}
+
+function refreshData() {
+    loadLawyers();
+}
+
+function exportLawyers() {
+    // Simple CSV export
+    const csvContent = [
+        ['Name', 'Email', 'Phone', 'Specialization', 'Experience', 'Rating', 'Status', 'Location', 'Created Date'],
+        ...filteredLawyers.map(lawyer => [
+            lawyer.name,
+            lawyer.email,
+            lawyer.phone || '',
+            lawyer.specialization,
+            lawyer.years_experience || 0,
+            lawyer.rating || 0,
+            lawyer.status,
+            lawyer.location || '',
+            new Date(lawyer.created_at).toLocaleDateString()
+        ])
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lawyers_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function showError(message) {
+    // Simple error display
+    const tbody = document.getElementById('lawyersTableBody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="7" class="text-center py-4 text-danger">
+                <i class="bi bi-exclamation-triangle fs-1"></i>
+                <h5 class="mt-3">Error</h5>
+                <p>${message}</p>
+            </td>
+        </tr>
+    `;
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+</script>
+{% endblock %}

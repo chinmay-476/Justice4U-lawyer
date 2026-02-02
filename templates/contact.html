@@ -1,0 +1,563 @@
+{% extends "base_user.html" if user_name else "base_public.html" %}
+
+{% block title %}Contact Us - LegalMatch{% endblock %}
+
+{% block content %}
+<style>
+    /* Contact Page Styles */
+    .contact-container {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 3rem;
+        margin: 2rem 0;
+    }
+
+    .contact-form {
+        background: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .contact-form h2 {
+        color: #1e3c72;
+        margin-bottom: 1.5rem;
+    }
+
+    .contact-info {
+        background: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .contact-info h2 {
+        color: #1e3c72;
+        margin-bottom: 1.5rem;
+    }
+
+    .contact-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: #f8f9fa;
+        border-radius: 8px;
+    }
+
+    .contact-icon {
+        color: #007bff;
+        font-size: 1.5rem;
+        width: 30px;
+        text-align: center;
+    }
+
+    .emergency-section {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        margin-top: 2rem;
+        text-align: center;
+    }
+
+    .priority-line {
+        font-size: 1.2rem;
+        font-weight: bold;
+        margin-top: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .contact-container {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>
+
+<!-- Your existing contact.html content goes here -->
+
+<div class="container py-4">
+    <div class="row">
+        <!-- Contact Form -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-envelope me-2"></i>Get in Touch
+                    </h4>
+                </div>
+                
+                <div class="card-body p-4">
+                    <div class="mb-4">
+                        <h5>How can we help you?</h5>
+                        <p class="text-muted">
+                            Have questions about our platform? Need assistance finding the right lawyer? 
+                            We're here to help. Send us a message and we'll get back to you within 24 hours.
+                        </p>
+                    </div>
+
+                    <form method="POST" id="contactForm" class="needs-validation" novalidate>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">Full Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="name" name="name" 
+                                       value="{{ data.name if data else '' }}" required minlength="2" maxlength="100">
+                                <div class="invalid-feedback">
+                                    Please provide your full name (2-100 characters).
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ data.email if data else '' }}" required>
+                                <div class="invalid-feedback">
+                                    Please provide a valid email address.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ data.phone if data else '' }}">
+                                <div class="form-text">Optional - Indian mobile (e.g., +91 98765 43210 or 09876543210)</div>
+                                <div class="invalid-feedback">
+                                    Please enter a valid Indian mobile number.
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="subject" class="form-label">Subject <span class="text-danger">*</span></label>
+                                <select class="form-select" id="subject" name="subject" required>
+                                    <option value="">Choose a subject</option>
+                                    <option value="general" {{ 'selected' if data and data.subject == 'general' else '' }}>General Inquiry</option>
+                                    <option value="lawyer-search" {{ 'selected' if data and data.subject == 'lawyer-search' else '' }}>Help Finding a Lawyer</option>
+                                    <option value="technical" {{ 'selected' if data and data.subject == 'technical' else '' }}>Technical Support</option>
+                                    <option value="billing" {{ 'selected' if data and data.subject == 'billing' else '' }}>Billing Question</option>
+                                    <option value="partnership" {{ 'selected' if data and data.subject == 'partnership' else '' }}>Partnership Opportunity</option>
+                                    <option value="complaint" {{ 'selected' if data and data.subject == 'complaint' else '' }}>Complaint</option>
+                                    <option value="other" {{ 'selected' if data and data.subject == 'other' else '' }}>Other</option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Please select a subject.
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <label for="message" class="form-label">Message <span class="text-danger">*</span></label>
+                                <textarea class="form-control" id="message" name="message" rows="6" 
+                                          placeholder="Please describe your inquiry in detail..." required 
+                                          minlength="10" maxlength="1000">{{ data.message if data else '' }}</textarea>
+                                <div class="form-text">
+                                    <span id="messageCount">0</span>/1000 characters (minimum 10)
+                                </div>
+                                <div class="invalid-feedback">
+                                    Please provide your message (10-1000 characters).
+                                </div>
+                                <div class="valid-feedback">
+                                    Looks good!
+                                </div>
+                            </div>
+                            
+                            <!-- Optional: Legal Matter Details -->
+                            <div class="col-12" id="legalMatterSection" style="display: none;">
+                                <div class="card bg-light border-0 mt-3">
+                                    <div class="card-body">
+                                        <h6 class="fw-bold mb-3">Legal Matter Details (Optional)</h6>
+                                        <div class="row g-3">
+                                            <div class="col-md-6">
+                                                <label for="legalArea" class="form-label">Area of Law</label>
+                                                <select class="form-select" id="legalArea" name="legal_area">
+                                                    <option value="">Select if applicable</option>
+                                                    <option value="criminal">Criminal Law</option>
+                                                    <option value="corporate">Corporate Law</option>
+                                                    <option value="family">Family Law</option>
+                                                    <option value="real-estate">Real Estate Law</option>
+                                                    <option value="personal-injury">Personal Injury</option>
+                                                    <option value="employment">Employment Law</option>
+                                                    <option value="immigration">Immigration Law</option>
+                                                    <option value="tax">Tax Law</option>
+                                                    <option value="bankruptcy">Bankruptcy Law</option>
+                                                    <option value="other">Other</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="urgency" class="form-label">Urgency Level</label>
+                                                <select class="form-select" id="urgency" name="urgency">
+                                                    <option value="low">Low - General inquiry</option>
+                                                    <option value="medium">Medium - Need help soon</option>
+                                                    <option value="high">High - Urgent matter</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="agreement" name="agreement" required>
+                                    <label class="form-check-label" for="agreement">
+                                        I agree to the <a href="#" class="text-primary">Privacy Policy</a> and 
+                                        consent to being contacted regarding my inquiry. <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="invalid-feedback">
+                                        Please agree to our privacy policy.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                                    <button type="reset" class="btn btn-outline-secondary me-md-2">Clear Form</button>
+                                    <button type="submit" class="btn btn-primary px-4" id="submitBtn">
+                                        <i class="bi bi-send me-2"></i>Send Message
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Information Sidebar -->
+        <div class="col-lg-4 mt-4 mt-lg-0">
+            <!-- Contact Info Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Contact Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="contact-item d-flex align-items-center mb-3">
+                        <div class="contact-icon bg-primary text-white me-3">
+                            <i class="bi bi-telephone"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Phone</h6>
+                            <p class="text-muted mb-0">
+                                <a href="tel:+919876543210" class="text-decoration-none">+91 98765 43210</a>
+                            </p>
+                            <small class="text-muted">Mon-Fri, 9 AM - 6 PM EST</small>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-item d-flex align-items-center mb-3">
+                        <div class="contact-icon bg-success text-white me-3">
+                            <i class="bi bi-envelope"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Email</h6>
+                            <p class="text-muted mb-0">
+                                <a href="mailto:support@legalmatch.com" class="text-decoration-none">support@legalmatch.com</a>
+                            </p>
+                            <small class="text-muted">24-48 hour response time</small>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-item d-flex align-items-center mb-3">
+                        <div class="contact-icon bg-warning text-white me-3">
+                            <i class="bi bi-chat-dots"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Live Chat</h6>
+                            <p class="text-muted mb-0">Available on our website</p>
+                            <small class="text-muted">Mon-Fri, 9 AM - 6 PM EST</small>
+                        </div>
+                    </div>
+                    
+                    <div class="contact-item d-flex align-items-center">
+                        <div class="contact-icon bg-info text-white me-3">
+                            <i class="bi bi-geo-alt"></i>
+                        </div>
+                        <div>
+                            <h6 class="mb-1">Address</h6>
+                            <p class="text-muted mb-0">
+                                123 Legal Street<br>
+                                Law City, LC 12345
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FAQ Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-question-circle me-2"></i>Frequently Asked Questions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="accordion accordion-flush" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    How do I find the right lawyer?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Use our search and filter tools on the Lawyers page to find professionals based on specialization, location, and ratings.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    Are all lawyers verified?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Yes, all lawyers on our platform are verified professionals with valid licenses and credentials.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                    Is there a fee to use LegalMatch?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Finding and contacting lawyers through our platform is free. Fees are arranged directly between you and your chosen lawyer.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Contact -->
+            <div class="card border-0 bg-danger text-white">
+                <div class="card-body text-center">
+                    <h6 class="fw-bold mb-2">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Emergency Legal Matter?
+                    </h6>
+                    <p class="mb-3">If you have an urgent legal emergency, contact emergency services or call our priority line.</p>
+                    <a href="tel:+919999911234" class="btn btn-light btn-sm">
+                        <i class="bi bi-telephone me-1"></i>Priority Line: +91 99999 11234
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-success">
+                    <i class="bi bi-check-circle-fill me-2"></i>Message Sent Successfully
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">Thank you for contacting LegalMatch! We've received your message and will respond within 24 hours.</p>
+                <div class="bg-light p-3 rounded">
+                    <h6 class="fw-bold mb-2">What happens next?</h6>
+                    <ul class="mb-0 ps-3">
+                        <li>Our team will review your inquiry</li>
+                        <li>You'll receive a confirmation email shortly</li>
+                        <li>We'll respond within 24 hours (usually much sooner)</li>
+                        <li>For urgent matters, we may call you directly</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    initializeContactForm();
+});
+
+function initializeContactForm() {
+    const form = document.getElementById('contactForm');
+    const messageTextarea = document.getElementById('message');
+    const messageCount = document.getElementById('messageCount');
+    const subjectSelect = document.getElementById('subject');
+    const legalMatterSection = document.getElementById('legalMatterSection');
+    const phoneInput = document.getElementById('phone');
+    const nameInput = document.getElementById('name');
+    const emailInput = document.getElementById('email');
+    
+    // Real-time validation
+    function validateField(field, validator) {
+        const isValid = validator(field.value);
+        field.classList.toggle('is-valid', isValid && field.value.length > 0);
+        field.classList.toggle('is-invalid', !isValid && field.value.length > 0);
+        return isValid;
+    }
+    
+    // Name validation
+    nameInput.addEventListener('input', function() {
+        validateField(this, (value) => value.length >= 2 && value.length <= 100);
+    });
+    
+    // Email validation
+    emailInput.addEventListener('input', function() {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        validateField(this, (value) => emailRegex.test(value));
+    });
+    
+    // Phone validation (Indian) — allow separators in input but validate digits
+    function isValidIndianMobile(raw) {
+        const digits = (raw || '').replace(/\D/g, '');
+        let local = digits;
+        if (digits.startsWith('91') && digits.length === 12) local = digits.slice(2);
+        else if (digits.startsWith('0') && digits.length === 11) local = digits.slice(1);
+        return local.length === 10 && /^[6-9]/.test(local);
+    }
+
+    phoneInput.addEventListener('input', function() {
+        validateField(this, (value) => !value || isValidIndianMobile(value));
+    });
+    
+    // Message character counter with enhanced validation
+    messageTextarea.addEventListener('input', function() {
+        const count = this.value.length;
+        messageCount.textContent = count;
+        
+        if (count < 10) {
+            messageCount.className = 'text-danger';
+            this.classList.add('is-invalid');
+            this.classList.remove('is-valid');
+        } else if (count > 1000) {
+            messageCount.className = 'text-danger';
+            this.value = this.value.substring(0, 1000);
+            messageCount.textContent = 1000;
+            this.classList.add('is-invalid');
+            this.classList.remove('is-valid');
+        } else {
+            messageCount.className = 'text-success';
+            this.classList.add('is-valid');
+            this.classList.remove('is-invalid');
+        }
+    });
+    
+    // Show/hide legal matter section based on subject
+    subjectSelect.addEventListener('change', function() {
+        if (this.value === 'lawyer-search') {
+            legalMatterSection.style.display = 'block';
+        } else {
+            legalMatterSection.style.display = 'none';
+        }
+        validateField(this, (value) => value !== '');
+    });
+    
+    // Phone number formatting (Indian)
+    phoneInput.addEventListener('input', function(e) {
+        const raw = e.target.value;
+        let digits = raw.replace(/\D/g, '');
+        const hasPlus = raw.trim().startsWith('+');
+        if (digits.startsWith('91') && digits.length >= 12) {
+            const local = digits.slice(2, 12);
+            e.target.value = '+91 ' + local.slice(0, 5) + ' ' + local.slice(5);
+        } else if (digits.startsWith('0') && digits.length >= 11) {
+            const local = digits.slice(1, 11);
+            e.target.value = '0' + local;
+        } else if (digits.length >= 10) {
+            const local = digits.slice(-10);
+            e.target.value = (hasPlus ? '+91 ' : '') + local.slice(0, 5) + ' ' + local.slice(5);
+        }
+    });
+    
+    // Form submission with enhanced validation
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Validate all fields
+        const isNameValid = validateField(nameInput, (value) => value.length >= 2 && value.length <= 100);
+        const isEmailValid = validateField(emailInput, (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value));
+        const isPhoneValid = validateField(phoneInput, (value) => !value || isValidIndianMobile(value));
+        const isSubjectValid = validateField(subjectSelect, (value) => value !== '');
+        const isMessageValid = validateField(messageTextarea, (value) => value.length >= 10 && value.length <= 1000);
+        
+        if (!form.checkValidity() || !isNameValid || !isEmailValid || !isPhoneValid || !isSubjectValid || !isMessageValid) {
+            form.classList.add('was-validated');
+            showAlert('Please correct the errors above before submitting.', 'danger');
+            return;
+        }
+        
+        submitContactForm();
+    });
+    
+    // Initialize character count
+    messageTextarea.dispatchEvent(new Event('input'));
+}
+
+        // Use the global alert system
+        function showAlert(message, type = 'info') {
+            LegalMatch.Alert.show(message, type);
+        }
+
+async function submitContactForm() {
+    const form = document.getElementById('contactForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const formData = new FormData(form);
+    
+    // Show loading state
+    LegalMatch.Loading.show(submitBtn, 'Sending...');
+    
+    try {
+        const response = await fetch('/contact', {
+            method: 'POST',
+            body: formData
+        });
+        
+        if (response.ok) {
+            // Show success modal
+            const successModal = new bootstrap.Modal(document.getElementById('successModal'));
+            successModal.show();
+            
+            // Reset form
+            form.reset();
+            form.classList.remove('was-validated');
+            document.getElementById('messageCount').textContent = '0';
+            document.getElementById('legalMatterSection').style.display = 'none';
+            
+            // Clear validation states
+            form.querySelectorAll('.is-valid, .is-invalid').forEach(field => {
+                field.classList.remove('is-valid', 'is-invalid');
+            });
+            
+            // Show success alert
+            showAlert('Message sent successfully! We will get back to you within 24 hours.', 'success');
+        } else {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || 'Failed to send message');
+        }
+    } catch (error) {
+        console.error('Error submitting form:', error);
+        showAlert(`Failed to send message: ${error.message}. Please try again.`, 'danger');
+    } finally {
+        LegalMatch.Loading.hide(submitBtn);
+    }
+}
+</script>
+{% endblock %}

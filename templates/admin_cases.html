@@ -1,0 +1,668 @@
+{% extends "base_admin.html" %}
+
+{% block title %}Case Management - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">Case Management</h1>
+                    <p class="text-muted">Monitor all user cases and legal matters</p>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-primary me-2" id="caseCount">Loading...</span>
+                    <button class="btn btn-outline-primary" onclick="refreshData()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="totalCases">0</h4>
+                            <p class="card-text">Total Cases</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-briefcase fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+                        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="openCases">0</h4>
+                            <p class="card-text">Open Cases</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-clock fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="inProgressCases">0</h4>
+                            <p class="card-text">In Progress</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-gear fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="closedCases">0</h4>
+                            <p class="card-text">Closed Cases</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-check-circle fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel me-2"></i>Search & Filter Cases
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-lg-3 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-search me-1"></i>Search
+                                </label>
+                                <input type="text" class="form-control" id="searchInput" 
+                                       placeholder="Case title, user name, lawyer...">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-briefcase me-1"></i>Case Type
+                                </label>
+                                <select class="form-select" id="typeFilter">
+                                    <option value="">All Types</option>
+                                    <option value="Criminal Law">Criminal Law</option>
+                                    <option value="Family Law">Family Law</option>
+                                    <option value="Corporate Law">Corporate Law</option>
+                                    <option value="Personal Injury">Personal Injury</option>
+                                    <option value="Real Estate Law">Real Estate Law</option>
+                                    <option value="Employment Law">Employment Law</option>
+                                    <option value="Immigration Law">Immigration Law</option>
+                                    <option value="Tax Law">Tax Law</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-flag me-1"></i>Status
+                                </label>
+                                <select class="form-select" id="statusFilter">
+                                    <option value="">All Status</option>
+                                    <option value="open">Open</option>
+                                    <option value="in_progress">In Progress</option>
+                                    <option value="closed">Closed</option>
+                                    <option value="pending">Pending</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Priority
+                                </label>
+                                <select class="form-select" id="priorityFilter">
+                                    <option value="">All Priority</option>
+                                    <option value="urgent">Urgent</option>
+                                    <option value="high">High</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="low">Low</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-sort-down me-1"></i>Sort By
+                                </label>
+                                <select class="form-select" id="sortFilter">
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                    <option value="priority">Priority</option>
+                                    <option value="status">Status</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-1 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button class="btn btn-outline-secondary" id="clearFilters">
+                                        <i class="bi bi-arrow-clockwise"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cases Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-briefcase me-2"></i>All Cases
+                    </h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small" id="filterStatus">Showing all cases</span>
+                        <button class="btn btn-outline-primary btn-sm" onclick="exportCases()">
+                            <i class="bi bi-download me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="casesTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Case</th>
+                                    <th>User</th>
+                                    <th>Lawyer</th>
+                                    <th>Status</th>
+                                    <th>Priority</th>
+                                    <th>Created</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="casesTableBody">
+                                <tr>
+                                    <td colspan="7" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Cases pagination">
+                <ul class="pagination justify-content-center" id="pagination">
+                    <!-- Pagination items will be generated by JavaScript -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- Case Details Modal -->
+<div class="modal fade" id="caseDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Case Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="caseDetailsContent">
+                <!-- Case details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allCases = [];
+let filteredCases = [];
+let currentPage = 1;
+const casesPerPage = 10;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadCases();
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    document.getElementById('searchInput').addEventListener('input', debounce(filterAndPaginate, 300));
+    document.getElementById('typeFilter').addEventListener('change', filterAndPaginate);
+    document.getElementById('statusFilter').addEventListener('change', filterAndPaginate);
+    document.getElementById('priorityFilter').addEventListener('change', filterAndPaginate);
+    document.getElementById('sortFilter').addEventListener('change', sortAndPaginate);
+    document.getElementById('clearFilters').addEventListener('click', clearAllFilters);
+}
+
+async function loadCases() {
+    try {
+        const response = await fetch('/admin/api/user-cases');
+        if (!response.ok) throw new Error('Failed to load cases');
+        
+        allCases = await response.json();
+        filteredCases = [...allCases];
+        
+        updateStatistics();
+        updateDisplay();
+        updateFilterStatus();
+        
+    } catch (error) {
+        console.error('Error loading cases:', error);
+        showError('Failed to load cases data');
+    }
+}
+
+function updateStatistics() {
+    const totalCases = allCases.length;
+    const openCases = allCases.filter(case_ => case_.case_status === 'open').length;
+    const inProgressCases = allCases.filter(case_ => case_.case_status === 'in_progress').length;
+    const closedCases = allCases.filter(case_ => case_.case_status === 'closed').length;
+    
+    document.getElementById('totalCases').textContent = totalCases;
+    document.getElementById('openCases').textContent = openCases;
+    document.getElementById('inProgressCases').textContent = inProgressCases;
+    document.getElementById('closedCases').textContent = closedCases;
+    document.getElementById('caseCount').textContent = `${totalCases} cases found`;
+}
+
+function filterAndPaginate() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const typeFilter = document.getElementById('typeFilter').value;
+    const statusFilter = document.getElementById('statusFilter').value;
+    const priorityFilter = document.getElementById('priorityFilter').value;
+    
+    filteredCases = allCases.filter(case_ => {
+        // Search filter
+        const matchesSearch = !searchTerm || 
+            case_.case_title.toLowerCase().includes(searchTerm) ||
+            case_.case_description.toLowerCase().includes(searchTerm) ||
+            case_.user_name.toLowerCase().includes(searchTerm) ||
+            (case_.lawyer_name && case_.lawyer_name.toLowerCase().includes(searchTerm));
+        
+        // Type filter
+        const matchesType = !typeFilter || case_.case_type === typeFilter;
+        
+        // Status filter
+        const matchesStatus = !statusFilter || case_.case_status === statusFilter;
+        
+        // Priority filter
+        const matchesPriority = !priorityFilter || case_.priority === priorityFilter;
+        
+        return matchesSearch && matchesType && matchesStatus && matchesPriority;
+    });
+    
+    currentPage = 1;
+    updateDisplay();
+    updateFilterStatus();
+}
+
+function sortAndPaginate() {
+    const sortBy = document.getElementById('sortFilter').value;
+    
+    filteredCases.sort((a, b) => {
+        switch (sortBy) {
+            case 'oldest':
+                return new Date(a.created_at) - new Date(b.created_at);
+            case 'priority':
+                const priorityOrder = { 'urgent': 4, 'high': 3, 'medium': 2, 'low': 1 };
+                return (priorityOrder[b.priority] || 0) - (priorityOrder[a.priority] || 0);
+            case 'status':
+                const statusOrder = { 'open': 4, 'in_progress': 3, 'pending': 2, 'closed': 1 };
+                return (statusOrder[b.case_status] || 0) - (statusOrder[a.case_status] || 0);
+            case 'newest':
+            default:
+                return new Date(b.created_at) - new Date(a.created_at);
+        }
+    });
+    
+    currentPage = 1;
+    updateDisplay();
+}
+
+function updateDisplay() {
+    const startIndex = (currentPage - 1) * casesPerPage;
+    const endIndex = startIndex + casesPerPage;
+    const casesToShow = filteredCases.slice(startIndex, endIndex);
+    
+    const tbody = document.getElementById('casesTableBody');
+    
+    if (casesToShow.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <i class="bi bi-search text-muted fs-1"></i>
+                    <h5 class="text-muted mt-3">No cases found</h5>
+                    <p class="text-muted">Try adjusting your search criteria</p>
+                </td>
+            </tr>
+        `;
+    } else {
+        tbody.innerHTML = casesToShow.map(case_ => `
+            <tr>
+                <td>
+                    <div>
+                        <h6 class="mb-1">${case_.case_title}</h6>
+                        <small class="text-muted">${case_.case_type}</small>
+                        ${case_.budget_range ? `<div class="small text-success">Budget: ${case_.budget_range}</div>` : ''}
+                    </div>
+                </td>
+                <td>
+                    <div>
+                        <div class="fw-semibold">${case_.user_name}</div>
+                        <div class="small text-muted">${case_.user_email}</div>
+                        ${case_.user_phone ? `<div class="small text-muted">${case_.user_phone}</div>` : ''}
+                    </div>
+                </td>
+                <td>
+                    ${case_.lawyer_name ? `
+                        <div>
+                            <div class="fw-semibold">${case_.lawyer_name}</div>
+                            <div class="small text-muted">${case_.lawyer_specialization}</div>
+                            <div class="small text-muted">${case_.lawyer_email}</div>
+                        </div>
+                    ` : '<span class="text-muted">No lawyer assigned</span>'}
+                </td>
+                <td>
+                    <span class="badge ${getStatusBadgeClass(case_.case_status)}">
+                        ${case_.case_status.replace('_', ' ').toUpperCase()}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge ${getPriorityBadgeClass(case_.priority)}">
+                        ${case_.priority.toUpperCase()}
+                    </span>
+                </td>
+                <td>
+                    <div class="small">
+                        ${new Date(case_.created_at).toLocaleDateString()}
+                    </div>
+                    <div class="small text-muted">
+                        ${new Date(case_.created_at).toLocaleTimeString()}
+                    </div>
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-primary btn-sm" onclick="viewCaseDetails(${case_.id})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="viewUserProfile('${case_.user_email}')">
+                            <i class="bi bi-person"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    updatePagination();
+}
+
+function getStatusBadgeClass(status) {
+    switch (status) {
+        case 'open': return 'bg-warning';
+        case 'in_progress': return 'bg-info';
+        case 'closed': return 'bg-success';
+        case 'pending': return 'bg-secondary';
+        default: return 'bg-secondary';
+    }
+}
+
+function getPriorityBadgeClass(priority) {
+    switch (priority) {
+        case 'urgent': return 'bg-danger';
+        case 'high': return 'bg-warning';
+        case 'medium': return 'bg-primary';
+        case 'low': return 'bg-secondary';
+        default: return 'bg-secondary';
+    }
+}
+
+function updatePagination() {
+    const totalPages = Math.ceil(filteredCases.length / casesPerPage);
+    const pagination = document.getElementById('pagination');
+    
+    if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+    
+    let paginationHTML = '';
+    
+    // Previous button
+    paginationHTML += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>
+        </li>
+    `;
+    
+    // Page numbers
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" data-page="${i}">${i}</a>
+            </li>
+        `;
+    }
+    
+    // Next button
+    paginationHTML += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>
+        </li>
+    `;
+    
+    pagination.innerHTML = paginationHTML;
+    
+    // Add click event listeners
+    pagination.querySelectorAll('.page-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const page = parseInt(this.dataset.page);
+            if (page && page !== currentPage && page >= 1 && page <= totalPages) {
+                currentPage = page;
+                updateDisplay();
+            }
+        });
+    });
+}
+
+function updateFilterStatus() {
+    const filters = [];
+    const searchTerm = document.getElementById('searchInput').value;
+    const type = document.getElementById('typeFilter').value;
+    const status = document.getElementById('statusFilter').value;
+    const priority = document.getElementById('priorityFilter').value;
+    
+    if (searchTerm) filters.push(`Search: "${searchTerm}"`);
+    if (type) filters.push(`Type: ${type}`);
+    if (status) filters.push(`Status: ${status}`);
+    if (priority) filters.push(`Priority: ${priority}`);
+    
+    const statusText = filters.length > 0 ? `Filtered by: ${filters.join(', ')}` : 'Showing all cases';
+    document.getElementById('filterStatus').textContent = statusText;
+}
+
+function clearAllFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('typeFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    document.getElementById('priorityFilter').value = '';
+    document.getElementById('sortFilter').value = 'newest';
+    
+    filteredCases = [...allCases];
+    currentPage = 1;
+    updateDisplay();
+    updateFilterStatus();
+}
+
+function viewCaseDetails(caseId) {
+    const case_ = allCases.find(c => c.id === caseId);
+    if (!case_) return;
+    
+    const content = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Case Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Title:</strong></td><td>${case_.case_title}</td></tr>
+                    <tr><td><strong>Type:</strong></td><td>${case_.case_type}</td></tr>
+                    <tr><td><strong>Status:</strong></td><td><span class="badge ${getStatusBadgeClass(case_.case_status)}">${case_.case_status.replace('_', ' ').toUpperCase()}</span></td></tr>
+                    <tr><td><strong>Priority:</strong></td><td><span class="badge ${getPriorityBadgeClass(case_.priority)}">${case_.priority.toUpperCase()}</span></td></tr>
+                    <tr><td><strong>Budget:</strong></td><td>${case_.budget_range || 'Not specified'}</td></tr>
+                    <tr><td><strong>Timeline:</strong></td><td>${case_.timeline || 'Not specified'}</td></tr>
+                    <tr><td><strong>Incident Date:</strong></td><td>${case_.incident_date || 'Not specified'}</td></tr>
+                    <tr><td><strong>Location:</strong></td><td>${case_.location || 'Not specified'}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>People Involved</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>User:</strong></td><td>${case_.user_name} (${case_.user_email})</td></tr>
+                    <tr><td><strong>User Phone:</strong></td><td>${case_.user_phone || 'Not provided'}</td></tr>
+                    <tr><td><strong>Lawyer:</strong></td><td>${case_.lawyer_name || 'Not assigned'}</td></tr>
+                    ${case_.lawyer_name ? `<tr><td><strong>Lawyer Email:</strong></td><td>${case_.lawyer_email}</td></tr>` : ''}
+                    ${case_.lawyer_name ? `<tr><td><strong>Specialization:</strong></td><td>${case_.lawyer_specialization}</td></tr>` : ''}
+                </table>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-12">
+                <h6>Case Description</h6>
+                <div class="border rounded p-3 bg-light">
+                    ${case_.case_description || 'No description provided'}
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <h6>Timeline</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Created:</strong></td><td>${new Date(case_.created_at).toLocaleString()}</td></tr>
+                    <tr><td><strong>Last Updated:</strong></td><td>${new Date(case_.updated_at).toLocaleString()}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Documents</h6>
+                <div class="border rounded p-3 bg-light">
+                    ${case_.documents && case_.documents.length > 0 ? 
+                        case_.documents.map(doc => `<div class="small">• ${doc}</div>`).join('') : 
+                        'No documents uploaded'
+                    }
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('caseDetailsContent').innerHTML = content;
+    new bootstrap.Modal(document.getElementById('caseDetailsModal')).show();
+}
+
+function viewUserProfile(userEmail) {
+    // Redirect to users page with email filter
+    window.location.href = `/admin/users?email=${userEmail}`;
+}
+
+function refreshData() {
+    loadCases();
+}
+
+function exportCases() {
+    // Simple CSV export
+    const csvContent = [
+        ['Case Title', 'Case Type', 'User Name', 'User Email', 'Lawyer Name', 'Status', 'Priority', 'Budget', 'Created Date'],
+        ...filteredCases.map(case_ => [
+            case_.case_title,
+            case_.case_type,
+            case_.user_name,
+            case_.user_email,
+            case_.lawyer_name || '',
+            case_.case_status,
+            case_.priority,
+            case_.budget_range || '',
+            new Date(case_.created_at).toLocaleDateString()
+        ])
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cases_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function showError(message) {
+    // Simple error display
+    const tbody = document.getElementById('casesTableBody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="7" class="text-center py-4 text-danger">
+                <i class="bi bi-exclamation-triangle fs-1"></i>
+                <h5 class="mt-3">Error</h5>
+                <p>${message}</p>
+            </td>
+        </tr>
+    `;
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+</script>
+{% endblock %}

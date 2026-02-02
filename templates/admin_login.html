@@ -1,0 +1,24 @@
+{% extends "base_public.html" %}
+{% block title %}Admin Login{% endblock %}
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-5">
+      <div class="card shadow-sm">
+        <div class="card-header bg-dark text-white"><h5 class="mb-0">Admin Login</h5></div>
+        <div class="card-body">
+          <form method="POST">
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input type="password" class="form-control" name="password" placeholder="Enter admin password" required>
+            </div>
+            <div class="d-grid">
+              <button class="btn btn-dark" type="submit">Login</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

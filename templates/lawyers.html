@@ -1,0 +1,1233 @@
+{% extends "base_user.html" if user_name else "base_public.html" %}
+
+{% block title %}Find Lawyers - LegalMatch{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">Find Your Perfect Lawyer</h1>
+                    <p class="text-muted">Browse verified legal professionals</p>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-primary me-2" id="lawyerCount">{{ lawyers|length }} lawyers found</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Search and Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel me-2"></i>Search & Filter Lawyers
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Search Input -->
+                        <div class="col-lg-4 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-search me-1"></i>Search
+                                </label>
+                                <input type="text" class="form-control" id="searchInput" 
+                                       placeholder="Name, specialization, location...">
+                            </div>
+                        </div>
+                        
+                        <!-- Specialization Filter -->
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-briefcase me-1"></i>Specialization
+                                </label>
+                                <select class="form-select" id="specialtyFilter">
+                                    <option value="">All Areas</option>
+                                    <option value="criminal">Criminal Law</option>
+                                    <option value="corporate">Corporate Law</option>
+                                    <option value="family">Family Law</option>
+                                    <option value="real estate">Real Estate Law</option>
+                                    <option value="personal injury">Personal Injury</option>
+                                    <option value="employment">Employment Law</option>
+                                    <option value="immigration">Immigration Law</option>
+                                    <option value="tax">Tax Law</option>
+                                    <option value="bankruptcy">Bankruptcy Law</option>
+                                    <option value="intellectual property">Intellectual Property</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Court Category Filter (Multi-select with checkboxes) -->
+                        <div class="col-lg-3 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-building me-1"></i>Court Category
+                                </label>
+                                <div id="courtFilterGroup" class="d-flex flex-wrap gap-3">
+                                    <label class="form-check">
+                                        <input class="form-check-input court-filter" type="checkbox" value="High Court">
+                                        <span class="form-check-label">High Court</span>
+                                    </label>
+                                    <label class="form-check">
+                                        <input class="form-check-input court-filter" type="checkbox" value="District Court">
+                                        <span class="form-check-label">District Court</span>
+                                    </label>
+                                    <label class="form-check">
+                                        <input class="form-check-input court-filter" type="checkbox" value="Supreme Court">
+                                        <span class="form-check-label">Supreme Court</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Sub-Court Filter (Checkbox multi-select) -->
+                        <div class="col-lg-4 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-diagram-3 me-1"></i>Sub Court Types
+                                </label>
+                                <div id="subCourtFilterGroup" class="d-flex flex-wrap gap-3">
+                                    <label class="form-check">
+                                        <input class="form-check-input sub-court-filter" type="checkbox" value="Family Court">
+                                        <span class="form-check-label">Family Court</span>
+                                    </label>
+                                    <label class="form-check">
+                                        <input class="form-check-input sub-court-filter" type="checkbox" value="Consumer Court">
+                                        <span class="form-check-label">Consumer Court</span>
+                                    </label>
+                                    <label class="form-check">
+                                        <input class="form-check-input sub-court-filter" type="checkbox" value="Labour Court">
+                                        <span class="form-check-label">Labour Court</span>
+                                    </label>
+                                    <label class="form-check">
+                                        <input class="form-check-input sub-court-filter" type="checkbox" value="Commercial Court">
+                                        <span class="form-check-label">Commercial Court</span>
+                                    </label>
+                                    <label class="form-check">
+                                        <input class="form-check-input sub-court-filter" type="checkbox" value="Tax Tribunal">
+                                        <span class="form-check-label">Tax Tribunal</span>
+                                    </label>
+                                    <label class="form-check">
+                                        <input class="form-check-input sub-court-filter" type="checkbox" value="Corporate Law Firm">
+                                        <span class="form-check-label">Corporate Law Firm</span>
+                                    </label>
+                                    <label class="form-check">
+                                        <input class="form-check-input sub-court-filter" type="checkbox" value="Private Practice">
+                                        <span class="form-check-label">Private Practice</span>
+                                    </label>
+                                    <label class="form-check">
+                                        <input class="form-check-input sub-court-filter" type="checkbox" value="Government Legal Department">
+                                        <span class="form-check-label">Government Legal Department</span>
+                                    </label>
+                                    <label class="form-check">
+                                        <input class="form-check-input sub-court-filter" type="checkbox" value="Other">
+                                        <span class="form-check-label">Other</span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Experience Filter -->
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-clock me-1"></i>Experience
+                                </label>
+                                <select class="form-select" id="experienceFilter">
+                                    <option value="">Any Experience</option>
+                                    <option value="0-2">0-2 years</option>
+                                    <option value="3-5">3-5 years</option>
+                                    <option value="6-10">6-10 years</option>
+                                    <option value="11-15">11-15 years</option>
+                                    <option value="16+">16+ years</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Rating Filter -->
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-star me-1"></i>Min Rating
+                                </label>
+                                <select class="form-select" id="ratingFilter">
+                                    <option value="">Any Rating</option>
+                                    <option value="4.5">4.5+ stars</option>
+                                    <option value="4.0">4.0+ stars</option>
+                                    <option value="3.5">3.5+ stars</option>
+                                    <option value="3.0">3.0+ stars</option>
+                                    <option value="2.5">2.5+ stars</option>
+                                    <option value="2.0">2.0+ stars</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Win Rate Filter -->
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-trophy me-1"></i>Min Win Rate
+                                </label>
+                                <select class="form-select" id="winRateFilter">
+                                    <option value="">Any Win Rate</option>
+                                    <option value="90">90%+</option>
+                                    <option value="80">80%+</option>
+                                    <option value="70">70%+</option>
+                                    <option value="60">60%+</option>
+                                    <option value="50">50%+</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- State Filter -->
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-geo-alt me-1"></i>State
+                                </label>
+                                <select class="form-select" id="stateFilter">
+                                    <option value="">All States</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- District Filter -->
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-geo-alt me-1"></i>District
+                                </label>
+                                <select class="form-select" id="districtFilter">
+                                    <option value="">All Districts</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Location Filter -->
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-geo-alt me-1"></i>City/Area
+                                </label>
+                                <input type="text" class="form-control" id="locationFilter" 
+                                       placeholder="City, Area...">
+                            </div>
+                        </div>
+                        
+                        <!-- Fee Range Filter -->
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-currency-rupee me-1"></i>Consultation Fee
+                                </label>
+                                <select class="form-select" id="feeFilter">
+                                    <option value="">Any Fee</option>
+                                    <option value="0-1000">Under ₹1,000</option>
+                                    <option value="1000-2500">₹1,000 - ₹2,500</option>
+                                    <option value="2500-5000">₹2,500 - ₹5,000</option>
+                                    <option value="5000-10000">₹5,000 - ₹10,000</option>
+                                    <option value="10000+">Above ₹10,000</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Sort Filter -->
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-sort-down me-1"></i>Sort By
+                                </label>
+                                <select class="form-select" id="sortFilter">
+                                    <option value="rating">Highest Rated</option>
+                                    <option value="experience">Most Experienced</option>
+                                    <option value="win_rate">Highest Win Rate</option>
+                                    <option value="fee_low">Lowest Fee</option>
+                                    <option value="fee_high">Highest Fee</option>
+                                    <option value="name">Name (A-Z)</option>
+                                    <option value="recent">Most Recent</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="row mt-3">
+                        <div class="col-12 d-flex justify-content-between align-items-center">
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-outline-secondary" id="clearFilters">
+                                    <i class="bi bi-arrow-clockwise me-1"></i>Clear All
+                                </button>
+                                <button class="btn btn-outline-primary" id="saveFilters">
+                                    <i class="bi bi-bookmark me-1"></i>Save Search
+                                </button>
+                            </div>
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="text-muted small" id="filterStatus">Showing all lawyers</span>
+                                <div class="btn-group" role="group">
+                                    <button type="button" class="btn btn-outline-secondary active" id="gridView">
+                                        <i class="bi bi-grid-3x3-gap"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="text-center py-5 d-none" id="loadingSpinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Lawyers Grid -->
+    <div class="row g-4" id="lawyersGrid">
+        {% for lawyer in lawyers %}
+        <div class="col-lg-4 col-md-6 lawyer-card" 
+             data-name="{{ lawyer.name|lower }}" 
+             data-specialization="{{ lawyer.specialization|lower }}" 
+             data-location="{{ lawyer.location|lower }}"
+             data-state="{{ lawyer.state|lower if lawyer.state else '' }}"
+             data-district="{{ lawyer.district|lower if lawyer.district else '' }}"
+             data-pincode="{{ lawyer.pincode or '' }}"
+             data-court-workplace="{{ lawyer.court_workplace or '' }}"
+             data-sub-courts="{{ (lawyer.sub_courts | join(', ')) if lawyer.sub_courts else '' }}"
+             data-rating="{{ lawyer.rating }}"
+             data-experience="{{ lawyer.years_experience }}"
+             data-win-rate="{{ lawyer.case_win_rate or 0 }}"
+             data-consultation-fee="{{ lawyer.consultation_fee or 0 }}"
+             data-total-cases="{{ lawyer.total_cases or 0 }}">
+            <div class="card h-100 shadow-sm border-0 lawyer-item">
+                <div class="card-body d-flex flex-column text-center">
+                    <div class="position-relative mb-3">
+                        <img src="{{ lawyer.photo }}" class="lawyer-photo" alt="{{ lawyer.name }}">
+                        <div class="position-absolute top-0 end-0">
+                            <span class="badge bg-success">
+                                <i class="bi bi-patch-check-fill me-1"></i>Verified
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <h5 class="card-title mb-1">{{ lawyer.name }}</h5>
+                        <div class="rating-display" data-rating="{{ lawyer.rating }}">
+                            <div class="stars">
+                                {% for i in range(1, 6) %}
+                                    <i class="bi bi-star{% if i <= lawyer.rating %}-fill text-warning{% endif %}"></i>
+                                {% endfor %}
+                            </div>
+                            <small class="text-muted d-block">
+                                {{ lawyer.rating }}/5 
+                                {% if lawyer.total_ratings %}
+                                    ({{ lawyer.total_ratings }} reviews)
+                                {% else %}
+                                    (No reviews yet)
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-2">
+                        <span class="badge bg-primary-subtle text-primary">
+                            {{ lawyer.specialization }}
+                        </span>
+                    </div>
+                    
+                    <div class="text-muted small mb-2">
+                        <i class="bi bi-geo-alt me-1"></i>{{ lawyer.location }}
+                        {% if lawyer.pincode %}
+                        <span class="mx-1">({{ lawyer.pincode }})</span>
+                        {% endif %}
+                        <span class="mx-2">|</span>
+                        <i class="bi bi-briefcase me-1"></i>{{ lawyer.years_experience }} years exp.
+                        {% if lawyer.court_workplace %}
+                        <span class="mx-2">|</span>
+                        <i class="bi bi-building me-1"></i>{{ lawyer.court_workplace }}
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Case Statistics -->
+                    {% if lawyer.total_cases and lawyer.total_cases > 0 %}
+                    <div class="case-stats mb-2">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="small text-primary fw-bold">{{ lawyer.case_win_rate or 0 }}%</div>
+                                <div class="small text-muted">Win Rate</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-success fw-bold">{{ lawyer.total_cases or 0 }}</div>
+                                <div class="small text-muted">Total Cases</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="small text-warning fw-bold">{{ lawyer.won_cases or 0 }}</div>
+                                <div class="small text-muted">Cases Won</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <!-- Fee Information -->
+                    {% if lawyer.consultation_fee or lawyer.case_fee_range %}
+                    <div class="fee-info mb-2">
+                        {% if lawyer.consultation_fee %}
+                        <div class="small text-success mb-1">
+                            <i class="bi bi-chat-dots me-1"></i>Consultation: ₹{{ "%.0f"|format(lawyer.consultation_fee) }}
+                        </div>
+                        {% endif %}
+                        {% if lawyer.case_fee_range %}
+                        <div class="small text-primary">
+                            <i class="bi bi-briefcase me-1"></i>Case Fee: {{ lawyer.case_fee_range }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    <p class="card-text text-muted small flex-grow-1">
+                        {{ lawyer.bio[:120] }}{% if lawyer.bio|length > 120 %}...{% endif %}
+                    </p>
+                    
+                    <div class="mt-auto">
+                        <div class="d-flex gap-2 mb-3">
+                            <a href="tel:{{ lawyer.phone }}" class="btn btn-outline-primary btn-sm flex-fill">
+                                <i class="bi bi-telephone me-1"></i>Call
+                            </a>
+                            <a href="mailto:{{ lawyer.email }}" class="btn btn-outline-secondary btn-sm flex-fill">
+                                <i class="bi bi-envelope me-1"></i>Email
+                            </a>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <a href="{{ url_for('lawyer_detail', lawyer_id=lawyer.id) }}" 
+                               class="btn btn-primary btn-sm flex-fill">
+                                View Profile
+                            </a>
+                            <button class="btn btn-outline-warning btn-sm" 
+                                    onclick="openRatingModal({{ lawyer.id }}, '{{ lawyer.name }}')">
+                                <i class="bi bi-star me-1"></i>Rate
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <!-- No Results Message -->
+    <div class="text-center py-5 d-none" id="noResults">
+        <div class="mb-3">
+            <i class="bi bi-search text-muted" style="font-size: 3rem;"></i>
+        </div>
+        <h4 class="text-muted">No lawyers found</h4>
+        <p class="text-muted">Try adjusting your search criteria</p>
+        <button class="btn btn-primary" id="resetSearch">
+            <i class="bi bi-arrow-clockwise me-1"></i>Reset Search
+        </button>
+    </div>
+
+    <!-- Pagination -->
+    <div class="row mt-4" id="paginationContainer">
+        <div class="col-12">
+            <nav aria-label="Lawyers pagination">
+                <ul class="pagination justify-content-center" id="pagination">
+                    <!-- Pagination items will be generated by JavaScript -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Results Summary -->
+    <div class="row mt-3">
+        <div class="col-12 text-center">
+            <div class="card bg-light border-0">
+                <div class="card-body py-2">
+                    <small class="text-muted" id="resultsSummary">
+                        Showing <span id="showingCount">0</span> of <span id="totalCount">0</span> lawyers
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Rating Modal -->
+<div class="modal fade" id="ratingModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Rate Lawyer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <h6 id="ratingLawyerName" class="mb-3"></h6>
+                <p class="text-muted mb-4">How would you rate this lawyer's service?</p>
+                <div class="rating-input mb-3">
+                    <button type="button" class="btn btn-outline-warning rating-btn" data-rating="1">
+                        <i class="bi bi-star"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-warning rating-btn" data-rating="2">
+                        <i class="bi bi-star"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-warning rating-btn" data-rating="3">
+                        <i class="bi bi-star"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-warning rating-btn" data-rating="4">
+                        <i class="bi bi-star"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-warning rating-btn" data-rating="5">
+                        <i class="bi bi-star"></i>
+                    </button>
+                </div>
+                <div id="ratingError" class="alert alert-danger d-none"></div>
+                <div id="ratingSuccess" class="alert alert-success d-none"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="submitRating" disabled>Submit Rating</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Lawyer Photo Styling */
+    .lawyer-photo {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin: 10px auto;
+        display: block;
+    }
+    
+    /* Position verified badge for round photos */
+    .lawyer-item .position-relative .badge {
+        top: 5px;
+        right: 5px;
+        font-size: 0.7rem;
+        padding: 0.25rem 0.5rem;
+    }
+    
+    /* Fee Information Styling */
+    .fee-info {
+        background: #f8f9fa;
+        border-radius: 6px;
+        padding: 8px;
+        border-left: 3px solid #007bff;
+    }
+    
+    .fee-info .small {
+        font-weight: 500;
+    }
+    
+    /* Rating System Animations */
+    .rating-updated {
+        animation: ratingPulse 1s ease-in-out;
+    }
+    
+    @keyframes ratingPulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.05); background-color: rgba(40, 167, 69, 0.1); }
+        100% { transform: scale(1); }
+    }
+    
+    .rating-success-animation {
+        animation: ratingSuccess 1s ease-in-out;
+    }
+    
+    @keyframes ratingSuccess {
+        0% { transform: scale(1); }
+        25% { transform: scale(1.02); background-color: rgba(40, 167, 69, 0.05); }
+        50% { transform: scale(1.05); background-color: rgba(40, 167, 69, 0.1); }
+        75% { transform: scale(1.02); background-color: rgba(40, 167, 69, 0.05); }
+        100% { transform: scale(1); }
+    }
+    
+    .rating-btn {
+        transition: all 0.3s ease;
+    }
+    
+    .rating-btn:hover {
+        transform: scale(1.1);
+    }
+    
+    .rating-btn.active {
+        transform: scale(1.15);
+        box-shadow: 0 4px 8px rgba(255, 193, 7, 0.3);
+    }
+    
+    .stars i {
+        transition: all 0.2s ease;
+    }
+    
+    .stars i:hover {
+        transform: scale(1.2);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/state-district.js') }}"></script>
+<script>
+// Rating System
+let selectedRating = 0;
+
+function openRatingModal(lawyerId, lawyerName) {
+    document.getElementById('ratingLawyerName').textContent = lawyerName;
+    const modal = new bootstrap.Modal(document.getElementById('ratingModal'));
+    modal.show();
+    
+    // Store the lawyer ID for submission
+    document.getElementById('submitRating').dataset.lawyerId = lawyerId;
+}
+
+// Rating button interactions
+document.querySelectorAll('.rating-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+        selectedRating = parseInt(this.dataset.rating);
+        updateRatingButtons();
+        document.getElementById('submitRating').disabled = false;
+    });
+    
+    btn.addEventListener('mouseenter', function() {
+        const rating = parseInt(this.dataset.rating);
+        highlightStars(rating);
+    });
+});
+
+document.querySelector('.rating-input').addEventListener('mouseleave', function() {
+    updateRatingButtons();
+});
+
+function highlightStars(rating) {
+    document.querySelectorAll('.rating-btn').forEach((btn, index) => {
+        const star = btn.querySelector('i');
+        if (index < rating) {
+            star.className = 'bi bi-star-fill';
+            btn.classList.add('btn-warning');
+            btn.classList.remove('btn-outline-warning');
+        } else {
+            star.className = 'bi bi-star';
+            btn.classList.remove('btn-warning');
+            btn.classList.add('btn-outline-warning');
+        }
+    });
+}
+
+function updateRatingButtons() {
+    highlightStars(selectedRating);
+}
+
+// Submit rating with enhanced feedback
+document.getElementById('submitRating').addEventListener('click', function() {
+    if (selectedRating === 0) return;
+    
+    const lawyerId = this.dataset.lawyerId;
+    const lawyerName = document.getElementById('ratingLawyerName').textContent;
+    const submitBtn = this;
+    submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Submitting...';
+    submitBtn.disabled = true;
+    
+    // Clear previous messages
+    document.getElementById('ratingError').classList.add('d-none');
+    document.getElementById('ratingSuccess').classList.add('d-none');
+    
+    fetch('/api/rate-lawyer', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            lawyer_id: lawyerId,
+            rating: selectedRating
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            document.getElementById('ratingSuccess').innerHTML = `
+                <i class="bi bi-check-circle-fill me-2"></i>
+                Thank you for rating ${lawyerName}! Your ${selectedRating}-star rating has been recorded.
+            `;
+            document.getElementById('ratingSuccess').classList.remove('d-none');
+            
+            // Update the page rating display for this lawyer
+            updateLawyerRatingDisplay(lawyerId, data.new_rating, data.total_ratings);
+            
+            // Show success animation
+            showRatingSuccessAnimation();
+            
+            setTimeout(() => {
+                bootstrap.Modal.getInstance(document.getElementById('ratingModal')).hide();
+                resetRatingModal();
+            }, 3000);
+        } else {
+            document.getElementById('ratingError').innerHTML = `
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                ${data.error || 'Error submitting rating. Please try again.'}
+            `;
+            document.getElementById('ratingError').classList.remove('d-none');
+        }
+    })
+    .catch(error => {
+        console.error('Rating submission error:', error);
+        document.getElementById('ratingError').innerHTML = `
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            Network error. Please check your connection and try again.
+        `;
+        document.getElementById('ratingError').classList.remove('d-none');
+    })
+    .finally(() => {
+        submitBtn.innerHTML = 'Submit Rating';
+        submitBtn.disabled = false;
+    });
+});
+
+function updateLawyerRatingDisplay(lawyerId, newRating, totalRatings) {
+    // Find the lawyer card by looking for the rating button with the lawyer ID
+    const ratingButtons = document.querySelectorAll(`button[onclick*="openRatingModal(${lawyerId}"]`);
+    
+    ratingButtons.forEach(button => {
+        const lawyerCard = button.closest('.lawyer-card');
+        if (lawyerCard) {
+            const ratingDisplay = lawyerCard.querySelector('.rating-display');
+            if (ratingDisplay) {
+                // Update stars
+                const starsContainer = ratingDisplay.querySelector('.stars');
+                if (starsContainer) {
+                    starsContainer.innerHTML = generateStars(newRating);
+                }
+                
+                // Update rating text
+                const ratingText = ratingDisplay.querySelector('.text-muted');
+                if (ratingText) {
+                    ratingText.textContent = `${newRating}/5 (${totalRatings} reviews)`;
+                }
+                
+                // Update data attributes for filtering
+                lawyerCard.dataset.rating = newRating;
+                
+                // Add success animation
+                ratingDisplay.classList.add('rating-updated');
+                setTimeout(() => {
+                    ratingDisplay.classList.remove('rating-updated');
+                }, 2000);
+            }
+        }
+    });
+}
+
+function showRatingSuccessAnimation() {
+    const modal = document.getElementById('ratingModal');
+    const modalContent = modal.querySelector('.modal-content');
+    
+    // Add success animation class
+    modalContent.classList.add('rating-success-animation');
+    
+    // Remove animation class after animation completes
+    setTimeout(() => {
+        modalContent.classList.remove('rating-success-animation');
+    }, 1000);
+}
+
+function resetRatingModal() {
+    selectedRating = 0;
+    document.querySelectorAll('.rating-btn').forEach(btn => {
+        btn.classList.remove('btn-warning');
+        btn.classList.add('btn-outline-warning');
+        btn.querySelector('i').className = 'bi bi-star';
+    });
+    document.getElementById('submitRating').disabled = true;
+    document.getElementById('ratingError').classList.add('d-none');
+    document.getElementById('ratingSuccess').classList.add('d-none');
+}
+
+function generateStars(rating) {
+    let stars = '';
+    for (let i = 1; i <= 5; i++) {
+        if (i <= rating) {
+            stars += '<i class="bi bi-star-fill text-warning"></i>';
+        } else {
+            stars += '<i class="bi bi-star"></i>';
+        }
+    }
+    return stars;
+}
+
+        // Enhanced Search and Filter Functionality with Pagination
+        let currentPage = 1;
+        const lawyersPerPage = 9;
+        let allLawyers = [];
+        let filteredLawyers = [];
+        let currentView = 'grid';
+
+        // Initialize the page
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeLawyersPage();
+        });
+
+        function initializeLawyersPage() {
+            // Load states for filtering using shared manager
+            if (window.stateDistrictManager) {
+                window.stateDistrictManager.loadStatesForFilter();
+            }
+            
+            // Collect all lawyer data
+            allLawyers = Array.from(document.querySelectorAll('.lawyer-card')).map(card => ({
+                element: card,
+                name: card.dataset.name,
+                specialization: card.dataset.specialization,
+                location: card.dataset.location,
+                state: card.dataset.state,
+                district: card.dataset.district,
+                pincode: card.dataset.pincode,
+                court_workplace: card.dataset.courtWorkplace,
+                sub_courts: (card.dataset.subCourts || '').split(',').map(s => s.trim()).filter(Boolean),
+                rating: parseFloat(card.dataset.rating),
+                experience: parseInt(card.dataset.experience),
+                win_rate: parseFloat(card.dataset.winRate),
+                consultation_fee: parseFloat(card.dataset.consultationFee),
+                total_cases: parseInt(card.dataset.totalCases),
+                id: card.dataset.lawyerId || Math.random().toString(36).substr(2, 9)
+            }));
+            
+            filteredLawyers = [...allLawyers];
+            
+            // Set up event listeners
+            document.getElementById('searchInput').addEventListener('input', debounce(filterAndPaginate, 300));
+            document.getElementById('specialtyFilter').addEventListener('change', filterAndPaginate);
+            // Court category checkbox listeners
+            document.querySelectorAll('.court-filter').forEach(cb => cb.addEventListener('change', filterAndPaginate));
+            document.getElementById('experienceFilter').addEventListener('change', filterAndPaginate);
+            document.getElementById('ratingFilter').addEventListener('change', filterAndPaginate);
+            document.getElementById('winRateFilter').addEventListener('change', filterAndPaginate);
+            document.getElementById('stateFilter').addEventListener('change', onStateChange);
+            document.getElementById('districtFilter').addEventListener('change', filterAndPaginate);
+            // Sub-court checkbox listeners
+            document.querySelectorAll('.sub-court-filter').forEach(cb => cb.addEventListener('change', filterAndPaginate));
+            document.getElementById('locationFilter').addEventListener('input', debounce(filterAndPaginate, 300));
+            document.getElementById('feeFilter').addEventListener('change', filterAndPaginate);
+            document.getElementById('sortFilter').addEventListener('change', sortAndPaginate);
+            document.getElementById('clearFilters').addEventListener('click', clearAllFilters);
+            document.getElementById('resetSearch').addEventListener('click', clearAllFilters);
+            document.getElementById('saveFilters').addEventListener('click', saveCurrentFilters);
+            document.getElementById('gridView').addEventListener('click', () => switchView('grid'));
+            
+            // Initialize search filter component
+            const searchContainer = document.querySelector('.search-filter-container');
+            if (searchContainer) {
+                LegalMatch.SearchFilter.init(searchContainer, {
+                    searchFields: ['name', 'specialization', 'location'],
+                    filterFields: ['specialization', 'experience', 'rating'],
+                    sortOptions: ['rating', 'experience', 'name', 'recent'],
+                    pagination: true
+                });
+            }
+            
+            // Initial display
+            updateDisplay();
+        }
+
+        // State-District loading functions
+        function loadStatesForFilter() {
+            fetch('/api/states')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const stateSelect = document.getElementById('stateFilter');
+                        stateSelect.innerHTML = '<option value="">All States</option>';
+                        
+                        data.states.forEach(state => {
+                            const option = document.createElement('option');
+                            option.value = state.toLowerCase();
+                            option.textContent = state;
+                            stateSelect.appendChild(option);
+                        });
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading states:', error);
+                });
+        }
+        
+        function loadDistrictsForFilter(state) {
+            if (!state) {
+                const districtSelect = document.getElementById('districtFilter');
+                districtSelect.innerHTML = '<option value="">All Districts</option>';
+                return;
+            }
+            
+            fetch(`/api/districts/${encodeURIComponent(state)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const districtSelect = document.getElementById('districtFilter');
+                        districtSelect.innerHTML = '<option value="">All Districts</option>';
+                        
+                        data.districts.forEach(district => {
+                            const option = document.createElement('option');
+                            option.value = district.toLowerCase();
+                            option.textContent = district;
+                            districtSelect.appendChild(option);
+                        });
+                        
+                        districtSelect.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading districts:', error);
+                });
+        }
+        
+        function onStateChange() {
+            const selectedState = document.getElementById('stateFilter').value;
+            if (window.stateDistrictManager) {
+                window.stateDistrictManager.loadDistrictsForFilter(selectedState, 'districtFilter');
+            }
+            filterAndPaginate();
+        }
+
+        function filterAndPaginate() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const specialtyFilter = document.getElementById('specialtyFilter').value.toLowerCase();
+    const courtFilter = Array.from(document.querySelectorAll('.court-filter:checked')).map(i => i.value);
+    const subCourtFilter = Array.from(document.querySelectorAll('.sub-court-filter:checked')).map(i => i.value);
+    const experienceFilter = document.getElementById('experienceFilter').value;
+    const ratingFilter = parseFloat(document.getElementById('ratingFilter').value) || 0;
+    const winRateFilter = parseFloat(document.getElementById('winRateFilter').value) || 0;
+    const stateFilter = document.getElementById('stateFilter').value.toLowerCase();
+    const districtFilter = document.getElementById('districtFilter').value.toLowerCase();
+    const locationFilter = document.getElementById('locationFilter').value.toLowerCase();
+    const feeFilter = document.getElementById('feeFilter').value;
+    
+    filteredLawyers = allLawyers.filter(lawyer => {
+        // Search filter
+        const matchesSearch = !searchTerm || 
+            lawyer.name.includes(searchTerm) || 
+            lawyer.specialization.includes(searchTerm) || 
+            lawyer.location.includes(searchTerm);
+        
+        // Specialization filter
+        const matchesSpecialty = !specialtyFilter || 
+            lawyer.specialization.includes(specialtyFilter);
+        
+        // Court category filter (multi)
+        const matchesCourt = courtFilter.length === 0 || courtFilter.includes(lawyer.court_workplace);
+
+        // Sub-court multi filter
+        const matchesSubCourt = subCourtFilter.length === 0 || (
+            (lawyer.sub_courts && lawyer.sub_courts.some(sc => subCourtFilter.includes(sc))) ||
+            (lawyer.court_workplace && subCourtFilter.includes(lawyer.court_workplace))
+        );
+        
+        // Experience filter
+        let matchesExperience = true;
+        if (experienceFilter) {
+            const [min, max] = experienceFilter.split('-').map(x => x === '+' ? Infinity : parseInt(x));
+            matchesExperience = lawyer.experience >= min && lawyer.experience <= max;
+        }
+        
+        // Rating filter
+        const matchesRating = lawyer.rating >= ratingFilter;
+        
+        // Win rate filter
+        const matchesWinRate = lawyer.win_rate >= winRateFilter;
+        
+        // State filter
+        const matchesState = !stateFilter || 
+            lawyer.state.includes(stateFilter);
+        
+        // District filter
+        const matchesDistrict = !districtFilter || 
+            lawyer.district.includes(districtFilter);
+        
+        // Location filter
+        const matchesLocation = !locationFilter || 
+            lawyer.location.includes(locationFilter) ||
+            lawyer.pincode.includes(locationFilter);
+        
+        // Fee filter
+        let matchesFee = true;
+        if (feeFilter) {
+            const fee = lawyer.consultation_fee || 0;
+            if (feeFilter === '0-1000') {
+                matchesFee = fee <= 1000;
+            } else if (feeFilter === '1000-2500') {
+                matchesFee = fee >= 1000 && fee <= 2500;
+            } else if (feeFilter === '2500-5000') {
+                matchesFee = fee >= 2500 && fee <= 5000;
+            } else if (feeFilter === '5000-10000') {
+                matchesFee = fee >= 5000 && fee <= 10000;
+            } else if (feeFilter === '10000+') {
+                matchesFee = fee > 10000;
+            }
+        }
+        
+        return matchesSearch && matchesSpecialty && matchesCourt && matchesSubCourt && matchesExperience && 
+               matchesRating && matchesWinRate && matchesState && matchesDistrict && matchesLocation && matchesFee;
+    });
+    
+    currentPage = 1;
+    updateDisplay();
+    updateFilterStatus();
+}
+
+function sortAndPaginate() {
+    const sortBy = document.getElementById('sortFilter').value;
+    
+    filteredLawyers.sort((a, b) => {
+        switch (sortBy) {
+            case 'name':
+                return a.name.localeCompare(b.name);
+            case 'experience':
+                return b.experience - a.experience;
+            case 'win_rate':
+                return b.win_rate - a.win_rate;
+            case 'fee_low':
+                return (a.consultation_fee || 0) - (b.consultation_fee || 0);
+            case 'fee_high':
+                return (b.consultation_fee || 0) - (a.consultation_fee || 0);
+            case 'recent':
+                // For now, just use the original order
+                return 0;
+            case 'rating':
+            default:
+                return b.rating - a.rating;
+        }
+    });
+    
+    currentPage = 1;
+    updateDisplay();
+}
+
+function updateDisplay() {
+    const startIndex = (currentPage - 1) * lawyersPerPage;
+    const endIndex = startIndex + lawyersPerPage;
+    const lawyersToShow = filteredLawyers.slice(startIndex, endIndex);
+    
+    // Hide all lawyers
+    allLawyers.forEach(lawyer => {
+        lawyer.element.style.display = 'none';
+    });
+    
+    // Show only current page lawyers
+    lawyersToShow.forEach(lawyer => {
+        lawyer.element.style.display = 'block';
+    });
+    
+    // Update pagination
+    updatePagination();
+    
+    // Update counters
+    updateCounters();
+    
+    // Show/hide no results
+    const noResults = document.getElementById('noResults');
+    if (filteredLawyers.length === 0) {
+        noResults.classList.remove('d-none');
+        document.getElementById('paginationContainer').classList.add('d-none');
+    } else {
+        noResults.classList.add('d-none');
+        document.getElementById('paginationContainer').classList.remove('d-none');
+    }
+}
+
+function updatePagination() {
+    const totalPages = Math.ceil(filteredLawyers.length / lawyersPerPage);
+    const pagination = document.getElementById('pagination');
+    
+    if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+    
+    let paginationHTML = '';
+    
+    // Previous button
+    paginationHTML += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>
+        </li>
+    `;
+    
+    // Page numbers
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+    
+    if (startPage > 1) {
+        paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="1">1</a></li>`;
+        if (startPage > 2) {
+            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" data-page="${i}">${i}</a>
+            </li>
+        `;
+    }
+    
+    if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+            paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+        paginationHTML += `<li class="page-item"><a class="page-link" href="#" data-page="${totalPages}">${totalPages}</a></li>`;
+    }
+    
+    // Next button
+    paginationHTML += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>
+        </li>
+    `;
+    
+    pagination.innerHTML = paginationHTML;
+    
+    // Add click event listeners
+    pagination.querySelectorAll('.page-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const page = parseInt(this.dataset.page);
+            if (page && page !== currentPage && page >= 1 && page <= totalPages) {
+                currentPage = page;
+                updateDisplay();
+            }
+        });
+    });
+}
+
+function updateCounters() {
+    const showingCount = Math.min(lawyersPerPage, filteredLawyers.length - (currentPage - 1) * lawyersPerPage);
+    const totalCount = filteredLawyers.length;
+    
+    document.getElementById('lawyerCount').textContent = `${totalCount} lawyers found`;
+    document.getElementById('showingCount').textContent = showingCount;
+    document.getElementById('totalCount').textContent = totalCount;
+}
+
+function updateFilterStatus() {
+    const filters = [];
+    const searchTerm = document.getElementById('searchInput').value;
+    const specialty = document.getElementById('specialtyFilter').value;
+    const court = Array.from(document.querySelectorAll('.court-filter:checked')).map(i => i.value).join(' | ');
+    const subCourt = Array.from(document.querySelectorAll('.sub-court-filter:checked')).map(i => i.value).join(' | ');
+    const experience = document.getElementById('experienceFilter').value;
+    const rating = document.getElementById('ratingFilter').value;
+    const winRate = document.getElementById('winRateFilter').value;
+    const state = document.getElementById('stateFilter').value;
+    const district = document.getElementById('districtFilter').value;
+    const location = document.getElementById('locationFilter').value;
+    const fee = document.getElementById('feeFilter').value;
+    
+    if (searchTerm) filters.push(`Search: "${searchTerm}"`);
+    if (specialty) filters.push(`Specialty: ${specialty}`);
+    if (court) filters.push(`Court: ${court}`);
+    if (subCourt) filters.push(`Sub Court: ${subCourt}`);
+    if (experience) filters.push(`Experience: ${experience}`);
+    if (rating) filters.push(`Rating: ${rating}+`);
+    if (winRate) filters.push(`Win Rate: ${winRate}%+`);
+    if (state) filters.push(`State: ${state}`);
+    if (district) filters.push(`District: ${district}`);
+    if (location) filters.push(`Location: ${location}`);
+    if (fee) filters.push(`Fee: ${fee}`);
+    
+    const status = filters.length > 0 ? `Filtered by: ${filters.join(', ')}` : 'Showing all lawyers';
+    document.getElementById('filterStatus').textContent = status;
+}
+
+function clearAllFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('specialtyFilter').value = '';
+    // clear court category checkboxes
+    document.querySelectorAll('.court-filter').forEach(cb => cb.checked = false);
+    document.getElementById('experienceFilter').value = '';
+    document.getElementById('ratingFilter').value = '';
+    document.getElementById('winRateFilter').value = '';
+    document.getElementById('stateFilter').value = '';
+    document.getElementById('districtFilter').value = '';
+    // keep district enabled
+    document.getElementById('locationFilter').value = '';
+    document.getElementById('feeFilter').value = '';
+    document.getElementById('sortFilter').value = 'rating';
+    
+    // Clear sub-court selections
+    document.querySelectorAll('.sub-court-filter').forEach(cb => cb.checked = false);
+    
+    filteredLawyers = [...allLawyers];
+    currentPage = 1;
+    updateDisplay();
+    updateFilterStatus();
+}
+
+function saveCurrentFilters() {
+    const filters = {
+        search: document.getElementById('searchInput').value,
+        specialty: document.getElementById('specialtyFilter').value,
+        court: Array.from(document.querySelectorAll('.court-filter:checked')).map(i => i.value),
+        subCourt: Array.from(document.querySelectorAll('.sub-court-filter:checked')).map(i => i.value),
+        experience: document.getElementById('experienceFilter').value,
+        rating: document.getElementById('ratingFilter').value,
+        winRate: document.getElementById('winRateFilter').value,
+        state: document.getElementById('stateFilter').value,
+        district: document.getElementById('districtFilter').value,
+        location: document.getElementById('locationFilter').value,
+        fee: document.getElementById('feeFilter').value,
+        sort: document.getElementById('sortFilter').value
+    };
+    
+    localStorage.setItem('lawyerSearchFilters', JSON.stringify(filters));
+    
+    // Show success message
+    const btn = document.getElementById('saveFilters');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '<i class="bi bi-check me-1"></i>Saved!';
+    btn.classList.remove('btn-outline-primary');
+    btn.classList.add('btn-success');
+    
+    setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.classList.remove('btn-success');
+        btn.classList.add('btn-outline-primary');
+    }, 2000);
+}
+
+function switchView(view) {
+    currentView = view;
+    const gridView = document.getElementById('gridView');
+    const lawyersGrid = document.getElementById('lawyersGrid');
+    // Only grid view is supported now
+    gridView.classList.add('active');
+    lawyersGrid.className = 'row g-4';
+    allLawyers.forEach(lawyer => {
+        lawyer.element.className = 'col-lg-4 col-md-6 lawyer-card';
+    });
+}
+
+// Utility function for debouncing
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+</script>
+{% endblock %}

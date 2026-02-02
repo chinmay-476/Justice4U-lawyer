@@ -1,0 +1,38 @@
+{% extends "base_user.html" %}
+{% block title %}User Dashboard{% endblock %}
+{% block content %}
+<div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Welcome, {{ user_name }}!</h2>
+        <a href="{{ url_for('logout_user') }}" class="btn btn-outline-danger">Logout</a>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Find a Lawyer</h5>
+                </div>
+                <div class="card-body">
+                    <p>Search for qualified lawyers in your area.</p>
+                    <a href="{{ url_for('lawyers') }}" class="btn btn-primary">Browse Lawyers</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="{{ url_for('contact') }}" class="btn btn-outline-primary">Contact Us</a>
+                        <a href="{{ url_for('about') }}" class="btn btn-outline-secondary">About</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

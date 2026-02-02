@@ -1,0 +1,616 @@
+{% extends "base_admin.html" %}
+
+{% block title %}User Management - Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">User Management</h1>
+                    <p class="text-muted">Manage all registered users and their cases</p>
+                </div>
+                <div class="d-flex align-items-center">
+                    <span class="badge bg-primary me-2" id="userCount">Loading...</span>
+                    <button class="btn btn-outline-primary" onclick="refreshData()">
+                        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="totalUsers">0</h4>
+                            <p class="card-text">Total Users</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-people fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="totalCases">0</h4>
+                            <p class="card-text">Total Cases</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-briefcase fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="openCases">0</h4>
+                            <p class="card-text">Open Cases</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-clock fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h4 class="card-title" id="activeUsers">0</h4>
+                            <p class="card-text">Active Users</p>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-person-check fs-1"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">
+                        <i class="bi bi-funnel me-2"></i>Search & Filter Users
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-lg-4 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-search me-1"></i>Search
+                                </label>
+                                <input type="text" class="form-control" id="searchInput" 
+                                       placeholder="Name, email, phone...">
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-calendar me-1"></i>Registration Date
+                                </label>
+                                <select class="form-select" id="dateFilter">
+                                    <option value="">All Time</option>
+                                    <option value="today">Today</option>
+                                    <option value="week">This Week</option>
+                                    <option value="month">This Month</option>
+                                    <option value="year">This Year</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-briefcase me-1"></i>Cases
+                                </label>
+                                <select class="form-select" id="caseFilter">
+                                    <option value="">All Users</option>
+                                    <option value="with_cases">With Cases</option>
+                                    <option value="no_cases">No Cases</option>
+                                    <option value="open_cases">With Open Cases</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-sort-down me-1"></i>Sort By
+                                </label>
+                                <select class="form-select" id="sortFilter">
+                                    <option value="newest">Newest First</option>
+                                    <option value="oldest">Oldest First</option>
+                                    <option value="name">Name (A-Z)</option>
+                                    <option value="cases">Most Cases</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-lg-2 col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-semibold">&nbsp;</label>
+                                <div class="d-grid">
+                                    <button class="btn btn-outline-secondary" id="clearFilters">
+                                        <i class="bi bi-arrow-clockwise me-1"></i>Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="bi bi-people me-2"></i>All Users
+                    </h5>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="text-muted small" id="filterStatus">Showing all users</span>
+                        <button class="btn btn-outline-primary btn-sm" onclick="exportUsers()">
+                            <i class="bi bi-download me-1"></i>Export
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0" id="usersTable">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>User</th>
+                                    <th>Contact</th>
+                                    <th>Registration</th>
+                                    <th>Cases</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="spinner-border text-primary" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <nav aria-label="Users pagination">
+                <ul class="pagination justify-content-center" id="pagination">
+                    <!-- Pagination items will be generated by JavaScript -->
+                </ul>
+            </nav>
+        </div>
+    </div>
+</div>
+
+<!-- User Details Modal -->
+<div class="modal fade" id="userDetailsModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">User Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="userDetailsContent">
+                <!-- User details will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let allUsers = [];
+let filteredUsers = [];
+let currentPage = 1;
+const usersPerPage = 10;
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadUsers();
+    setupEventListeners();
+});
+
+function setupEventListeners() {
+    document.getElementById('searchInput').addEventListener('input', debounce(filterAndPaginate, 300));
+    document.getElementById('dateFilter').addEventListener('change', filterAndPaginate);
+    document.getElementById('caseFilter').addEventListener('change', filterAndPaginate);
+    document.getElementById('sortFilter').addEventListener('change', sortAndPaginate);
+    document.getElementById('clearFilters').addEventListener('click', clearAllFilters);
+}
+
+async function loadUsers() {
+    try {
+        const response = await fetch('/admin/api/users-detailed');
+        if (!response.ok) throw new Error('Failed to load users');
+        
+        allUsers = await response.json();
+        filteredUsers = [...allUsers];
+        
+        updateStatistics();
+        updateDisplay();
+        updateFilterStatus();
+        
+    } catch (error) {
+        console.error('Error loading users:', error);
+        showError('Failed to load users data');
+    }
+}
+
+function updateStatistics() {
+    const totalUsers = allUsers.length;
+    const totalCases = allUsers.reduce((sum, user) => sum + (user.total_cases || 0), 0);
+    const openCases = allUsers.reduce((sum, user) => sum + (user.open_cases || 0), 0);
+    const activeUsers = allUsers.filter(user => (user.total_cases || 0) > 0).length;
+    
+    document.getElementById('totalUsers').textContent = totalUsers;
+    document.getElementById('totalCases').textContent = totalCases;
+    document.getElementById('openCases').textContent = openCases;
+    document.getElementById('activeUsers').textContent = activeUsers;
+    document.getElementById('userCount').textContent = `${totalUsers} users found`;
+}
+
+function filterAndPaginate() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const dateFilter = document.getElementById('dateFilter').value;
+    const caseFilter = document.getElementById('caseFilter').value;
+    
+    filteredUsers = allUsers.filter(user => {
+        // Search filter
+        const matchesSearch = !searchTerm || 
+            user.name.toLowerCase().includes(searchTerm) ||
+            user.email.toLowerCase().includes(searchTerm) ||
+            (user.phone && user.phone.includes(searchTerm));
+        
+        // Date filter
+        let matchesDate = true;
+        if (dateFilter) {
+            const userDate = new Date(user.created_at);
+            const now = new Date();
+            
+            switch (dateFilter) {
+                case 'today':
+                    matchesDate = userDate.toDateString() === now.toDateString();
+                    break;
+                case 'week':
+                    const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+                    matchesDate = userDate >= weekAgo;
+                    break;
+                case 'month':
+                    const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+                    matchesDate = userDate >= monthAgo;
+                    break;
+                case 'year':
+                    const yearAgo = new Date(now.getTime() - 365 * 24 * 60 * 60 * 1000);
+                    matchesDate = userDate >= yearAgo;
+                    break;
+            }
+        }
+        
+        // Case filter
+        let matchesCase = true;
+        if (caseFilter) {
+            switch (caseFilter) {
+                case 'with_cases':
+                    matchesCase = (user.total_cases || 0) > 0;
+                    break;
+                case 'no_cases':
+                    matchesCase = (user.total_cases || 0) === 0;
+                    break;
+                case 'open_cases':
+                    matchesCase = (user.open_cases || 0) > 0;
+                    break;
+            }
+        }
+        
+        return matchesSearch && matchesDate && matchesCase;
+    });
+    
+    currentPage = 1;
+    updateDisplay();
+    updateFilterStatus();
+}
+
+function sortAndPaginate() {
+    const sortBy = document.getElementById('sortFilter').value;
+    
+    filteredUsers.sort((a, b) => {
+        switch (sortBy) {
+            case 'name':
+                return a.name.localeCompare(b.name);
+            case 'cases':
+                return (b.total_cases || 0) - (a.total_cases || 0);
+            case 'oldest':
+                return new Date(a.created_at) - new Date(b.created_at);
+            case 'newest':
+            default:
+                return new Date(b.created_at) - new Date(a.created_at);
+        }
+    });
+    
+    currentPage = 1;
+    updateDisplay();
+}
+
+function updateDisplay() {
+    const startIndex = (currentPage - 1) * usersPerPage;
+    const endIndex = startIndex + usersPerPage;
+    const usersToShow = filteredUsers.slice(startIndex, endIndex);
+    
+    const tbody = document.getElementById('usersTableBody');
+    
+    if (usersToShow.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-4">
+                    <i class="bi bi-search text-muted fs-1"></i>
+                    <h5 class="text-muted mt-3">No users found</h5>
+                    <p class="text-muted">Try adjusting your search criteria</p>
+                </td>
+            </tr>
+        `;
+    } else {
+        tbody.innerHTML = usersToShow.map(user => `
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center">
+                        <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-3">
+                            ${user.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <h6 class="mb-0">${user.name}</h6>
+                            <small class="text-muted">ID: ${user.id}</small>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <div>
+                        <div class="small">${user.email}</div>
+                        ${user.phone ? `<div class="small text-muted">${user.phone}</div>` : ''}
+                    </div>
+                </td>
+                <td>
+                    <div class="small">
+                        ${new Date(user.created_at).toLocaleDateString()}
+                    </div>
+                    <div class="small text-muted">
+                        ${new Date(user.created_at).toLocaleTimeString()}
+                    </div>
+                </td>
+                <td>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-primary">${user.total_cases || 0} Total</span>
+                        ${user.open_cases > 0 ? `<span class="badge bg-warning">${user.open_cases} Open</span>` : ''}
+                        ${user.in_progress_cases > 0 ? `<span class="badge bg-info">${user.in_progress_cases} In Progress</span>` : ''}
+                        ${user.closed_cases > 0 ? `<span class="badge bg-success">${user.closed_cases} Closed</span>` : ''}
+                    </div>
+                </td>
+                <td>
+                    <span class="badge ${(user.total_cases || 0) > 0 ? 'bg-success' : 'bg-secondary'}">
+                        ${(user.total_cases || 0) > 0 ? 'Active' : 'Inactive'}
+                    </span>
+                </td>
+                <td>
+                    <div class="btn-group" role="group">
+                        <button class="btn btn-outline-primary btn-sm" onclick="viewUserDetails(${user.id})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-info btn-sm" onclick="viewUserCases(${user.id})">
+                            <i class="bi bi-briefcase"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+    
+    updatePagination();
+}
+
+function updatePagination() {
+    const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+    const pagination = document.getElementById('pagination');
+    
+    if (totalPages <= 1) {
+        pagination.innerHTML = '';
+        return;
+    }
+    
+    let paginationHTML = '';
+    
+    // Previous button
+    paginationHTML += `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage - 1}">Previous</a>
+        </li>
+    `;
+    
+    // Page numbers
+    const startPage = Math.max(1, currentPage - 2);
+    const endPage = Math.min(totalPages, currentPage + 2);
+    
+    for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" data-page="${i}">${i}</a>
+            </li>
+        `;
+    }
+    
+    // Next button
+    paginationHTML += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" data-page="${currentPage + 1}">Next</a>
+        </li>
+    `;
+    
+    pagination.innerHTML = paginationHTML;
+    
+    // Add click event listeners
+    pagination.querySelectorAll('.page-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const page = parseInt(this.dataset.page);
+            if (page && page !== currentPage && page >= 1 && page <= totalPages) {
+                currentPage = page;
+                updateDisplay();
+            }
+        });
+    });
+}
+
+function updateFilterStatus() {
+    const filters = [];
+    const searchTerm = document.getElementById('searchInput').value;
+    const date = document.getElementById('dateFilter').value;
+    const caseFilter = document.getElementById('caseFilter').value;
+    
+    if (searchTerm) filters.push(`Search: "${searchTerm}"`);
+    if (date) filters.push(`Date: ${date}`);
+    if (caseFilter) filters.push(`Cases: ${caseFilter}`);
+    
+    const status = filters.length > 0 ? `Filtered by: ${filters.join(', ')}` : 'Showing all users';
+    document.getElementById('filterStatus').textContent = status;
+}
+
+function clearAllFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('dateFilter').value = '';
+    document.getElementById('caseFilter').value = '';
+    document.getElementById('sortFilter').value = 'newest';
+    
+    filteredUsers = [...allUsers];
+    currentPage = 1;
+    updateDisplay();
+    updateFilterStatus();
+}
+
+function viewUserDetails(userId) {
+    const user = allUsers.find(u => u.id === userId);
+    if (!user) return;
+    
+    const content = `
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Personal Information</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Name:</strong></td><td>${user.name}</td></tr>
+                    <tr><td><strong>Email:</strong></td><td>${user.email}</td></tr>
+                    <tr><td><strong>Phone:</strong></td><td>${user.phone || 'Not provided'}</td></tr>
+                    <tr><td><strong>Registration:</strong></td><td>${new Date(user.created_at).toLocaleString()}</td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h6>Case Statistics</h6>
+                <table class="table table-sm">
+                    <tr><td><strong>Total Cases:</strong></td><td>${user.total_cases || 0}</td></tr>
+                    <tr><td><strong>Open Cases:</strong></td><td>${user.open_cases || 0}</td></tr>
+                    <tr><td><strong>In Progress:</strong></td><td>${user.in_progress_cases || 0}</td></tr>
+                    <tr><td><strong>Closed Cases:</strong></td><td>${user.closed_cases || 0}</td></tr>
+                </table>
+            </div>
+        </div>
+    `;
+    
+    document.getElementById('userDetailsContent').innerHTML = content;
+    new bootstrap.Modal(document.getElementById('userDetailsModal')).show();
+}
+
+function viewUserCases(userId) {
+    // Redirect to cases page with user filter
+    window.location.href = `/admin/cases?user_id=${userId}`;
+}
+
+function refreshData() {
+    loadUsers();
+}
+
+function exportUsers() {
+    // Simple CSV export
+    const csvContent = [
+        ['Name', 'Email', 'Phone', 'Registration Date', 'Total Cases', 'Open Cases', 'In Progress', 'Closed Cases'],
+        ...filteredUsers.map(user => [
+            user.name,
+            user.email,
+            user.phone || '',
+            new Date(user.created_at).toLocaleDateString(),
+            user.total_cases || 0,
+            user.open_cases || 0,
+            user.in_progress_cases || 0,
+            user.closed_cases || 0
+        ])
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+}
+
+function showError(message) {
+    // Simple error display
+    const tbody = document.getElementById('usersTableBody');
+    tbody.innerHTML = `
+        <tr>
+            <td colspan="6" class="text-center py-4 text-danger">
+                <i class="bi bi-exclamation-triangle fs-1"></i>
+                <h5 class="mt-3">Error</h5>
+                <p>${message}</p>
+            </td>
+        </tr>
+    `;
+}
+
+function debounce(func, wait) {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func(...args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+</script>
+{% endblock %}

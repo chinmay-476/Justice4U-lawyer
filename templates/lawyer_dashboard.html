@@ -1,0 +1,263 @@
+{% extends "base_lawyer.html" %}
+{% block title %}Lawyer Dashboard{% endblock %}
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="mb-0">Welcome, {{ lawyer.name }}</h3>
+      <p class="text-muted mb-0">{{ lawyer.specialization }} • {{ lawyer.years_experience }} years experience</p>
+    </div>
+    <a href="{{ url_for('lawyer_logout') }}" class="btn btn-outline-secondary">Logout</a>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="row mb-4">
+    <div class="col-md-3">
+      <div class="card bg-primary text-white">
+        <div class="card-body text-center">
+          <h4>{{ messages|length }}</h4>
+          <p class="mb-0">Client Messages</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-success text-white">
+        <div class="card-body text-center">
+          <h4>{{ lawyer.rating }}/5</h4>
+          <p class="mb-0">Average Rating</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-info text-white">
+        <div class="card-body text-center">
+          <h4>{{ lawyer.total_ratings or 0 }}</h4>
+          <p class="mb-0">Total Reviews</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card bg-warning text-white">
+        <div class="card-body text-center">
+          <h4>{{ lawyer.years_experience }}</h4>
+          <p class="mb-0">Years Experience</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Client Messages -->
+  <div class="card shadow-sm">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+      <strong>Client Messages</strong>
+      <span class="badge bg-primary">{{ messages|length }} messages</span>
+    </div>
+    <div class="card-body">
+      {% if messages %}
+      <div class="list-group">
+        {% for m in messages %}
+        <div class="list-group-item">
+          <div class="d-flex w-100 justify-content-between">
+            <h6 class="mb-1">{{ m.client_name }} 
+              <small class="text-muted">{{ m.client_email }}{% if m.client_phone %} • {{ m.client_phone }}{% endif %}</small>
+            </h6>
+            <small class="text-muted">{{ m.created_at }}</small>
+          </div>
+          <p class="mb-1">{{ m.message }}</p>
+          <div class="mt-2">
+            <a class="btn btn-sm btn-primary" href="mailto:{{ m.client_email }}">Reply Email</a>
+            {% if m.client_phone %}<a class="btn btn-sm btn-success" href="tel:{{ m.client_phone }}">Call</a>{% endif %}
+            <button class="btn btn-sm btn-info" onclick="showCaseDetails({{ m.id }})">Case Details</button>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="text-center py-5">
+        <i class="bi bi-inbox display-1 text-muted"></i>
+        <p class="text-muted mt-3">No client messages yet.</p>
+        <p class="text-muted">Your profile is visible to clients. Messages will appear here when clients contact you.</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Case Details Modal -->
+<div class="modal fade" id="caseDetailsModal" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Case Details & Document Requirements</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <form id="caseDetailsForm">
+          <input type="hidden" id="messageId" name="message_id">
+          
+          <!-- Case Information -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Case Type</label>
+              <select class="form-select" name="case_type" required>
+                <option value="">Select Case Type</option>
+                <option value="criminal">Criminal Law</option>
+                <option value="civil">Civil Law</option>
+                <option value="family">Family Law</option>
+                <option value="property">Property Law</option>
+                <option value="corporate">Corporate Law</option>
+                <option value="employment">Employment Law</option>
+                <option value="immigration">Immigration Law</option>
+                <option value="tax">Tax Law</option>
+                <option value="other">Other</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Priority Level</label>
+              <select class="form-select" name="priority" required>
+                <option value="low">Low</option>
+                <option value="medium" selected>Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Case Description -->
+          <div class="mb-3">
+            <label class="form-label">Detailed Case Description</label>
+            <textarea class="form-control" name="case_description" rows="4" 
+                      placeholder="Provide detailed description of the legal matter..."></textarea>
+          </div>
+
+          <!-- Document Requirements -->
+          <div class="mb-3">
+            <label class="form-label">Required Documents</label>
+            <div class="row">
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="documents" value="id_proof" id="id_proof">
+                  <label class="form-check-label" for="id_proof">ID Proof (Aadhaar/PAN/Passport)</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="documents" value="address_proof" id="address_proof">
+                  <label class="form-check-label" for="address_proof">Address Proof</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="documents" value="contract_agreement" id="contract_agreement">
+                  <label class="form-check-label" for="contract_agreement">Contract/Agreement</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="documents" value="financial_documents" id="financial_documents">
+                  <label class="form-check-label" for="financial_documents">Financial Documents</label>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="documents" value="court_documents" id="court_documents">
+                  <label class="form-check-label" for="court_documents">Court Documents</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="documents" value="medical_reports" id="medical_reports">
+                  <label class="form-check-label" for="medical_reports">Medical Reports</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="documents" value="witness_statements" id="witness_statements">
+                  <label class="form-check-label" for="witness_statements">Witness Statements</label>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input" type="checkbox" name="documents" value="other" id="other_docs">
+                  <label class="form-check-label" for="other_docs">Other Documents</label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Additional Requirements -->
+          <div class="mb-3">
+            <label class="form-label">Additional Document Requirements</label>
+            <textarea class="form-control" name="additional_requirements" rows="3" 
+                      placeholder="Specify any additional documents or requirements..."></textarea>
+          </div>
+
+          <!-- Timeline -->
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label class="form-label">Expected Timeline</label>
+              <select class="form-select" name="timeline" required>
+                <option value="1_week">1 Week</option>
+                <option value="2_weeks">2 Weeks</option>
+                <option value="1_month" selected>1 Month</option>
+                <option value="2_months">2 Months</option>
+                <option value="3_months">3 Months</option>
+                <option value="6_months">6 Months</option>
+                <option value="1_year">1 Year</option>
+                <option value="ongoing">Ongoing</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Estimated Fees (₹)</label>
+              <input type="number" class="form-control" name="estimated_fees" 
+                     placeholder="Enter estimated fees" min="0">
+            </div>
+          </div>
+
+          <!-- Next Steps -->
+          <div class="mb-3">
+            <label class="form-label">Next Steps & Recommendations</label>
+            <textarea class="form-control" name="next_steps" rows="3" 
+                      placeholder="Outline the next steps and recommendations for the client..."></textarea>
+          </div>
+
+          <!-- Status -->
+          <div class="mb-3">
+            <label class="form-label">Case Status</label>
+            <select class="form-select" name="case_status" required>
+              <option value="new">New Case</option>
+              <option value="under_review">Under Review</option>
+              <option value="documentation">Awaiting Documentation</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="on_hold">On Hold</option>
+            </select>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+        <button type="button" class="btn btn-primary" onclick="saveCaseDetails()">Save Case Details</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function showCaseDetails(messageId) {
+  document.getElementById('messageId').value = messageId;
+  const modal = new bootstrap.Modal(document.getElementById('caseDetailsModal'));
+  modal.show();
+}
+
+function saveCaseDetails() {
+  const form = document.getElementById('caseDetailsForm');
+  const formData = new FormData(form);
+  
+  // Convert checkboxes to array
+  const documents = [];
+  form.querySelectorAll('input[name="documents"]:checked').forEach(checkbox => {
+    documents.push(checkbox.value);
+  });
+  formData.set('documents', JSON.stringify(documents));
+  
+  // Here you would typically send the data to your backend
+  console.log('Case details:', Object.fromEntries(formData));
+  
+  // Show success message
+  alert('Case details saved successfully!');
+  
+  // Close modal
+  const modal = bootstrap.Modal.getInstance(document.getElementById('caseDetailsModal'));
+  modal.hide();
+}
+</script>
+{% endblock %}
