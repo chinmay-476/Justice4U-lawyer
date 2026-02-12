@@ -9,9 +9,18 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from core import app, csrf, limiter, EMAIL_CONFIG, send_email, get_db_connection, is_admin_authenticated, get_current_lawyer_id, sanitize_input, validate_email, validate_phone, sanitize_phone, normalize_indian_phone, allowed_file, add_contact_message, add_lawyer_application, add_lawyer_application_fallback, get_lawyer_by_id, add_lawyer_to_db, add_rating, get_all_lawyers_from_db, get_lawyer_applications_fallback, create_lawyer_from_application, log_application_action, SEND_APPROVAL_EMAIL, SEND_REJECTION_EMAIL, UPLOAD_FOLDER
 from config import MAX_FILE_SIZE
 
+def _require_admin_api():
+    if not is_admin_authenticated():
+        return jsonify({'success': False, 'error': 'Access denied'}), 403
+    return None
+
 @app.route('/')
 def home():
     return render_template('home.html', hide_chrome=True)
+
+@app.route('/api/health')
+def health_check():
+    return jsonify({'success': True, 'status': 'ok', 'timestamp': datetime.utcnow().isoformat() + 'Z'})
 
 @app.route('/auth-center')
 def auth_center():
@@ -375,6 +384,9 @@ def get_lawyer_api(lawyer_id):
 @app.route('/api/lawyers/<int:lawyer_id>', methods=['PUT'])
 def update_lawyer(lawyer_id):
     """Update lawyer information"""
+    auth_error = _require_admin_api()
+    if auth_error:
+        return auth_error
     connection = get_db_connection()
     if not connection:
         return jsonify({'success': False, 'error': 'Database connection failed'}), 500
@@ -424,6 +436,9 @@ def update_lawyer(lawyer_id):
 @app.route('/api/lawyers/<int:lawyer_id>', methods=['DELETE'])
 def delete_lawyer(lawyer_id):
     """Delete a lawyer"""
+    auth_error = _require_admin_api()
+    if auth_error:
+        return auth_error
     connection = get_db_connection()
     if not connection:
         return jsonify({'success': False, 'error': 'Database connection failed'}), 500
@@ -449,6 +464,9 @@ def delete_lawyer(lawyer_id):
 @app.route('/api/lawyers/<int:lawyer_id>/status', methods=['PUT'])
 def update_lawyer_status(lawyer_id):
     """Update lawyer status"""
+    auth_error = _require_admin_api()
+    if auth_error:
+        return auth_error
     connection = get_db_connection()
     if not connection:
         return jsonify({'success': False, 'error': 'Database connection failed'}), 500

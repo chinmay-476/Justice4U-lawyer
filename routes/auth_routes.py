@@ -1,33 +1,36 @@
-from flask import render_template, request, jsonify, redirect, url_for, flash, send_from_directory
+from flask import render_template, request, jsonify, redirect, url_for, flash, send_from_directory, session
 import os
 import json
 import uuid
+import re
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
 from core import app, csrf, limiter, EMAIL_CONFIG, send_email, get_db_connection, is_admin_authenticated, get_current_lawyer_id, sanitize_input, validate_email, validate_phone, normalize_indian_phone, add_contact_message, add_lawyer_application, add_lawyer_application_fallback, get_lawyer_by_id, add_lawyer_to_db, add_rating, get_all_lawyers_from_db, get_lawyer_applications_fallback, create_lawyer_from_application, log_application_action, SEND_APPROVAL_EMAIL, SEND_REJECTION_EMAIL, UPLOAD_FOLDER
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 @csrf.exempt
+@limiter.limit("10 per minute")
 def admin_login():
     if request.method == 'GET':
         return render_template('admin_login.html', hide_chrome=True)
     password = (request.form.get('password') or '').strip()
     admin_password = os.getenv('ADMIN_PASSWORD', 'admin123')
     if password == admin_password:
-        resp = redirect(url_for('admin_dashboard'))
-        resp.set_cookie('is_admin', '1')
-        return resp
+        session.clear()
+        session.permanent = True
+        session['is_admin'] = True
+        return redirect(url_for('admin_dashboard'))
     flash('Invalid admin password', 'error')
     return render_template('admin_login.html')
 
 @app.route('/admin/logout')
 def admin_logout():
-    resp = redirect(url_for('admin_login'))
-    resp.delete_cookie('is_admin')
-    return resp
+    session.pop('is_admin', None)
+    return redirect(url_for('admin_login'))
 
 @app.route('/portal/lawyer/login', methods=['GET', 'POST'])
 @csrf.exempt
+@limiter.limit("10 per minute")
 def lawyer_login():
     if request.method == 'GET':
         return render_template('lawyer_login.html', hide_chrome=True)
@@ -65,11 +68,10 @@ def lawyer_login():
             else:
                 flash('No lawyer found with provided email/phone. Please check your details or apply first.', 'error')
             return render_template('lawyer_login.html')
-        # naive session using signed cookie
-        resp = redirect(url_for('lawyer_dashboard'))
-        resp.set_cookie('lawyer_id', str(lawyer['id']))
-        resp.set_cookie('lawyer_name', lawyer['name'])
-        return resp
+        session.permanent = True
+        session['lawyer_id'] = int(lawyer['id'])
+        session['lawyer_name'] = lawyer['name']
+        return redirect(url_for('lawyer_dashboard'))
     finally:
         if connection.is_connected():
             cursor.close()
@@ -103,6 +105,7 @@ def lawyer_dashboard():
 
 @app.route('/register', methods=['GET', 'POST'])
 @csrf.exempt
+@limiter.limit("5 per minute")
 def register_user():
     if request.method == 'GET':
         return render_template('register.html', hide_chrome=True)
@@ -112,6 +115,9 @@ def register_user():
     phone = normalize_indian_phone(sanitize_input(request.form.get('phone', '')))
     if not name or not email or not password:
         flash('Name, email, password required', 'error')
+        return render_template('register.html')
+    if len(password) < 8 or not re.search(r'[A-Z]', password) or not re.search(r'[a-z]', password) or not re.search(r'\d', password):
+        flash('Password must be at least 8 characters and include uppercase, lowercase, and a number.', 'error')
         return render_template('register.html')
     connection = get_db_connection()
     if not connection:
@@ -137,6 +143,7 @@ def register_user():
 
 @app.route('/login', methods=['GET', 'POST'])
 @csrf.exempt
+@limiter.limit("10 per minute")
 def login_user():
     if request.method == 'GET':
         return render_template('login.html')
@@ -153,10 +160,10 @@ def login_user():
         if not user or not check_password_hash(user['password_hash'], password):
             flash('Invalid credentials', 'error')
             return render_template('login.html')
-        resp = redirect(url_for('user_home'))
-        resp.set_cookie('user_id', str(user['id']))
-        resp.set_cookie('user_name', user['name'])
-        return resp
+        session.permanent = True
+        session['user_id'] = int(user['id'])
+        session['user_name'] = user['name']
+        return redirect(url_for('user_home'))
     finally:
         if connection.is_connected():
             cursor.close()
@@ -164,23 +171,21 @@ def login_user():
 
 @app.route('/user/home')
 def user_home():
-    user_id = request.cookies.get('user_id')
-    user_name = request.cookies.get('user_name')
+    user_id = session.get('user_id')
+    user_name = session.get('user_name')
     if not user_id:
         return redirect(url_for('login_user'))
     return render_template('user_home.html', user_name=user_name)
 
 @app.route('/logout')
 def logout_user():
-    resp = redirect(url_for('home'))
-    resp.delete_cookie('user_id')
-    resp.delete_cookie('user_name')
-    return resp
+    session.pop('user_id', None)
+    session.pop('user_name', None)
+    return redirect(url_for('home'))
 
 @app.route('/portal/lawyer/logout')
 def lawyer_logout():
-    resp = redirect(url_for('home'))
-    resp.delete_cookie('lawyer_id')
-    resp.delete_cookie('lawyer_name')
-    return resp
+    session.pop('lawyer_id', None)
+    session.pop('lawyer_name', None)
+    return redirect(url_for('home'))
 

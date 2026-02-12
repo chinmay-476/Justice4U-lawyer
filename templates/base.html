@@ -191,7 +191,7 @@
                     <i class="bi bi-person-plus me-2"></i>
                     <span>Join as Lawyer</span>
                 </a>
-                {% if request.cookies.get('user_id') %}
+                {% if session.get('user_id') %}
                 <a class="btn btn-outline-light btn-sm text-start" href="{{ url_for('logout_user') }}">
                     <i class="bi bi-box-arrow-right me-2"></i>
                     <span>Logout</span>
@@ -206,7 +206,7 @@
                     <span>Register</span>
                 </a>
                 {% endif %}
-                {% if request.cookies.get('is_admin') == '1' %}
+                {% if session.get('is_admin') %}
                 <a class="btn btn-outline-light btn-sm text-start" href="{{ url_for('admin_dashboard') }}">
                     <i class="bi bi-speedometer2 me-2"></i>
                     <span>Admin Panel</span>

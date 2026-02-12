@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, session
 from flask_wtf import CSRFProtect
 import mysql.connector
 from mysql.connector import Error
@@ -6,7 +6,7 @@ import json
 import re
 import os
 from dotenv import load_dotenv
-from datetime import datetime
+from datetime import datetime, timedelta
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -22,6 +22,10 @@ application_counter = 0
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
 app.config['WTF_CSRF_ENABLED'] = False
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'false').lower() in ('1', 'true', 'yes')
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=int(os.getenv('SESSION_LIFETIME_HOURS', '8')))
 
 csrf = CSRFProtect(app)
 DISABLE_RATE_LIMITS = os.getenv('DISABLE_RATE_LIMITS', 'true').lower() in ('1', 'true', 'yes')
@@ -49,8 +53,16 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.context_processor
 def inject_user():
-    user_name = request.cookies.get('user_name')
+    user_name = session.get('user_name')
     return dict(user_name=user_name)
+
+@app.after_request
+def add_security_headers(response):
+    response.headers.setdefault('X-Content-Type-Options', 'nosniff')
+    response.headers.setdefault('X-Frame-Options', 'DENY')
+    response.headers.setdefault('Referrer-Policy', 'strict-origin-when-cross-origin')
+    response.headers.setdefault('Content-Security-Policy', "default-src 'self' 'unsafe-inline' data: https:;")
+    return response
 
 def validate_email_config():
     missing = []
@@ -801,10 +813,10 @@ Contact me for professional legal consultation and representation."""
         return False
 
 def is_admin_authenticated():
-    return request.cookies.get('is_admin') == '1'
+    return bool(session.get('is_admin'))
 
 def get_current_lawyer_id():
-    lawyer_id = request.cookies.get('lawyer_id')
+    lawyer_id = session.get('lawyer_id')
     try:
         return int(lawyer_id) if lawyer_id else None
     except Exception:
