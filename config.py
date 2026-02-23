@@ -3,6 +3,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
+def _env_bool(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    return value.strip().lower() in ("1", "true", "yes", "on")
+
 # Database Configuration
 DB_CONFIG = {
     'host': os.getenv('DB_HOST', 'localhost'),
@@ -14,6 +21,14 @@ DB_CONFIG = {
 
 # Secret Key
 SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key')
+
+# Developer Docs Configuration
+APP_ENV = os.getenv('FLASK_ENV', os.getenv('ENV', 'development')).strip().lower()
+ENABLE_DEV_DOCS = _env_bool('ENABLE_DEV_DOCS', default=(APP_ENV != 'production'))
+
+# Master Auth Configuration
+MASTER_AUTH_EMAIL = os.getenv('MASTER_AUTH_EMAIL', 'chinmaysahoo63715@gmail.com').strip().lower()
+MASTER_AUTH_PASSWORD = os.getenv('MASTER_AUTH_PASSWORD', 'chin1987')
 
 # Email Configuration
 EMAIL_CONFIG = {

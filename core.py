@@ -12,7 +12,17 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import html
 import logging
-from config import DB_CONFIG, SECRET_KEY, EMAIL_CONFIG, UPLOAD_FOLDER, ALLOWED_EXTENSIONS
+from werkzeug.security import check_password_hash, generate_password_hash
+from config import (
+    DB_CONFIG,
+    SECRET_KEY,
+    EMAIL_CONFIG,
+    UPLOAD_FOLDER,
+    ALLOWED_EXTENSIONS,
+    ENABLE_DEV_DOCS,
+    MASTER_AUTH_EMAIL,
+    MASTER_AUTH_PASSWORD,
+)
 
 load_dotenv()
 
@@ -22,6 +32,7 @@ application_counter = 0
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
 app.config['WTF_CSRF_ENABLED'] = False
+app.config['ENABLE_DEV_DOCS'] = ENABLE_DEV_DOCS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
 app.config['SESSION_COOKIE_SECURE'] = os.getenv('SESSION_COOKIE_SECURE', 'false').lower() in ('1', 'true', 'yes')
@@ -397,6 +408,32 @@ def init_database():
             FOREIGN KEY (lawyer_id) REFERENCES lawyers(id) ON DELETE CASCADE
         )
         """
+
+        create_master_auth_table = """
+        CREATE TABLE IF NOT EXISTS master_auth (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(255) NOT NULL UNIQUE,
+            password_hash VARCHAR(255) NOT NULL,
+            can_admin TINYINT(1) NOT NULL DEFAULT 0,
+            can_user TINYINT(1) NOT NULL DEFAULT 0,
+            is_active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        )
+        """
+
+        create_login_audit_table = """
+        CREATE TABLE IF NOT EXISTS login_audit (
+            id BIGINT AUTO_INCREMENT PRIMARY KEY,
+            email_or_identity VARCHAR(255) NOT NULL,
+            role_attempted VARCHAR(50) NOT NULL,
+            status ENUM('success', 'failure') NOT NULL,
+            source ENUM('master', 'regular') NOT NULL,
+            ip_address VARCHAR(45),
+            user_agent VARCHAR(512),
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+        """
         
         cursor.execute(create_lawyers_table)
         cursor.execute(create_users_table)
@@ -407,6 +444,8 @@ def init_database():
         cursor.execute(create_audit_table)
         cursor.execute(create_lawyer_messages_table)
         cursor.execute(create_verification_tokens_table)
+        cursor.execute(create_master_auth_table)
+        cursor.execute(create_login_audit_table)
         
         # Create indexes (skip if they already exist)
         indexes = [
@@ -418,7 +457,9 @@ def init_database():
             "CREATE INDEX idx_applications_email ON lawyer_applications(email)",
             "CREATE INDEX idx_contacts_status ON contact_messages(status)",
             "CREATE INDEX idx_lawyer_messages_lawyer_id ON lawyer_client_messages(lawyer_id)",
-            "CREATE INDEX idx_verification_token ON verification_tokens(token)"
+            "CREATE INDEX idx_verification_token ON verification_tokens(token)",
+            "CREATE INDEX idx_login_audit_created_at ON login_audit(created_at)",
+            "CREATE INDEX idx_login_audit_role_status ON login_audit(role_attempted, status)"
         ]
         
         for index_query in indexes:
@@ -432,6 +473,7 @@ def init_database():
                     raise
         
         connection.commit()
+        ensure_master_auth_seed()
         return True
         
     except Error as e:
@@ -811,6 +853,169 @@ Contact me for professional legal consultation and representation."""
     except Exception as e:
         print(f"Error creating lawyer from application: {e}")
         return False
+
+
+def ensure_master_auth_seed():
+    """Ensure master auth credentials exist and stay role-enabled."""
+    connection = get_db_connection()
+    if not connection:
+        return False
+
+    cursor = None
+    try:
+        cursor = connection.cursor()
+        password_hash = generate_password_hash(MASTER_AUTH_PASSWORD)
+        cursor.execute(
+            """
+            INSERT INTO master_auth (email, password_hash, can_admin, can_user, is_active)
+            VALUES (%s, %s, 1, 1, 1)
+            ON DUPLICATE KEY UPDATE
+                password_hash = VALUES(password_hash),
+                can_admin = VALUES(can_admin),
+                can_user = VALUES(can_user),
+                is_active = VALUES(is_active),
+                updated_at = CURRENT_TIMESTAMP
+            """,
+            (MASTER_AUTH_EMAIL, password_hash),
+        )
+        connection.commit()
+        return True
+    except Error as e:
+        logging.error(f"Error seeding master_auth: {e}")
+        return False
+    finally:
+        try:
+            if cursor is not None:
+                cursor.close()
+            if connection.is_connected():
+                connection.close()
+        except Exception:
+            pass
+
+
+def verify_master_credentials(email, password, role):
+    """Check master credentials and role permission."""
+    normalized_email = (email or "").strip().lower()
+    if not normalized_email or not password:
+        return False
+
+    connection = get_db_connection()
+    if not connection:
+        return False
+
+    cursor = None
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute(
+            """
+            SELECT email, password_hash, can_admin, can_user, is_active
+            FROM master_auth
+            WHERE email = %s
+            LIMIT 1
+            """,
+            (normalized_email,),
+        )
+        row = cursor.fetchone()
+        if not row or not bool(row.get("is_active")):
+            return False
+        if role == "admin" and not bool(row.get("can_admin")):
+            return False
+        if role == "user" and not bool(row.get("can_user")):
+            return False
+        return check_password_hash(row["password_hash"], password)
+    except Error:
+        return False
+    finally:
+        try:
+            if cursor is not None:
+                cursor.close()
+            if connection.is_connected():
+                connection.close()
+        except Exception:
+            pass
+
+
+def log_login_audit(email_or_identity, role_attempted, status, source, ip_address=None, user_agent=None):
+    """Persist login outcomes for traceability and anomaly review."""
+    connection = get_db_connection()
+    if not connection:
+        return False
+
+    cursor = None
+    try:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            INSERT INTO login_audit (email_or_identity, role_attempted, status, source, ip_address, user_agent)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """,
+            (
+                (email_or_identity or "unknown")[:255],
+                (role_attempted or "unknown")[:50],
+                "success" if status == "success" else "failure",
+                "master" if source == "master" else "regular",
+                (ip_address or "")[:45] or None,
+                (user_agent or "")[:512] or None,
+            ),
+        )
+        connection.commit()
+        return True
+    except Error:
+        return False
+    finally:
+        try:
+            if cursor is not None:
+                cursor.close()
+            if connection.is_connected():
+                connection.close()
+        except Exception:
+            pass
+
+
+def get_login_audit_entries(page=1, per_page=25, sort="desc"):
+    """Return paginated login audit rows for admin monitoring UI/API."""
+    connection = get_db_connection()
+    if not connection:
+        return {"items": [], "total": 0, "page": 1, "per_page": per_page, "sort": sort}
+
+    safe_page = max(int(page or 1), 1)
+    safe_per_page = min(max(int(per_page or 25), 1), 100)
+    safe_sort = "asc" if str(sort).lower() == "asc" else "desc"
+    order_sql = "ASC" if safe_sort == "asc" else "DESC"
+    offset = (safe_page - 1) * safe_per_page
+
+    cursor = None
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT COUNT(*) AS total FROM login_audit")
+        total = int((cursor.fetchone() or {}).get("total", 0))
+        cursor.execute(
+            f"""
+            SELECT id, email_or_identity, role_attempted, status, source, ip_address, user_agent, created_at
+            FROM login_audit
+            ORDER BY created_at {order_sql}, id {order_sql}
+            LIMIT %s OFFSET %s
+            """,
+            (safe_per_page, offset),
+        )
+        items = cursor.fetchall() or []
+        return {
+            "items": items,
+            "total": total,
+            "page": safe_page,
+            "per_page": safe_per_page,
+            "sort": safe_sort,
+        }
+    except Error:
+        return {"items": [], "total": 0, "page": safe_page, "per_page": safe_per_page, "sort": safe_sort}
+    finally:
+        try:
+            if cursor is not None:
+                cursor.close()
+            if connection.is_connected():
+                connection.close()
+        except Exception:
+            pass
 
 def is_admin_authenticated():
     return bool(session.get('is_admin'))

@@ -1,4 +1,4 @@
-from flask import render_template, request, jsonify, redirect, url_for, flash, send_from_directory
+from flask import abort, render_template, request, jsonify, redirect, url_for, flash, send_from_directory
 import os
 import json
 import uuid
@@ -6,12 +6,101 @@ from datetime import datetime
 from mysql.connector import Error
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
-from core import app, csrf, limiter, EMAIL_CONFIG, send_email, get_db_connection, is_admin_authenticated, get_current_lawyer_id, sanitize_input, validate_email, validate_phone, normalize_indian_phone, check_duplicate_lawyer, add_contact_message, add_lawyer_application, add_lawyer_application_fallback, get_lawyer_by_id, add_lawyer_to_db, add_rating, get_all_lawyers_from_db, get_lawyer_applications_fallback, create_lawyer_from_application, log_application_action, SEND_APPROVAL_EMAIL, SEND_REJECTION_EMAIL, UPLOAD_FOLDER
+from core import app, csrf, limiter, EMAIL_CONFIG, send_email, get_db_connection, is_admin_authenticated, get_current_lawyer_id, sanitize_input, validate_email, validate_phone, normalize_indian_phone, check_duplicate_lawyer, add_contact_message, add_lawyer_application, add_lawyer_application_fallback, get_lawyer_by_id, add_lawyer_to_db, add_rating, get_all_lawyers_from_db, get_lawyer_applications_fallback, create_lawyer_from_application, log_application_action, get_login_audit_entries, SEND_APPROVAL_EMAIL, SEND_REJECTION_EMAIL, UPLOAD_FOLDER
 
 def _require_admin_api():
     if not is_admin_authenticated():
         return jsonify({'success': False, 'error': 'Access denied'}), 403
     return None
+
+
+def _guess_auth_requirement(path):
+    if path in ('/admin/login', '/admin/logout'):
+        return 'Public (admin auth entry)'
+    if path.startswith('/admin') or path.startswith('/api/admin'):
+        return 'Admin session'
+    if path.startswith('/api/contact-messages') or path.startswith('/api/lawyer-applications'):
+        return 'Admin session'
+    if path.startswith('/api/applications') or path.startswith('/api/messages'):
+        return 'Admin session'
+    if path.startswith('/api/lawyers/') and (path.endswith('/status') or path.count('/') >= 3):
+        return 'Mixed (public read + admin update/delete)'
+    if path.startswith('/portal/lawyer/dashboard') or path.startswith('/portal/lawyer/logout'):
+        return 'Lawyer session'
+    if path.startswith('/user/home') or path == '/logout':
+        return 'User session'
+    return 'Public'
+
+
+def _collect_api_inventory():
+    inventory = []
+    for rule in sorted(app.url_map.iter_rules(), key=lambda item: item.rule):
+        methods = sorted(method for method in rule.methods if method not in {'HEAD', 'OPTIONS'})
+        if not methods:
+            continue
+        inventory.append(
+            {
+                'path': rule.rule,
+                'methods': ', '.join(methods),
+                'auth': _guess_auth_requirement(rule.rule),
+                'endpoint': rule.endpoint,
+            }
+        )
+    return inventory
+
+
+def _fallback_schema_snapshot():
+    return {
+        'lawyers': ['id', 'name', 'email', 'phone', 'specialization', 'status', 'rating', 'created_at'],
+        'users': ['id', 'name', 'email', 'password_hash', 'phone', 'created_at'],
+        'user_cases': ['id', 'user_id', 'lawyer_id', 'case_title', 'case_type', 'case_status', 'documents'],
+        'lawyer_applications': ['id', 'name', 'email', 'phone', 'specialization', 'status', 'processed_at'],
+        'contact_messages': ['id', 'name', 'email', 'message', 'subject', 'status', 'created_at'],
+        'lawyer_ratings': ['id', 'lawyer_id', 'user_ip', 'rating', 'created_at'],
+        'application_audit_log': ['id', 'application_id', 'action', 'old_status', 'new_status', 'created_at'],
+        'lawyer_client_messages': ['id', 'lawyer_id', 'client_name', 'client_email', 'message', 'created_at'],
+        'verification_tokens': ['id', 'lawyer_id', 'token', 'expires_at', 'created_at'],
+        'master_auth': ['id', 'email', 'password_hash', 'can_admin', 'can_user', 'is_active', 'created_at', 'updated_at'],
+        'login_audit': ['id', 'email_or_identity', 'role_attempted', 'status', 'source', 'ip_address', 'user_agent', 'created_at'],
+    }
+
+
+def _collect_db_schema():
+    connection = get_db_connection()
+    if not connection:
+        return _fallback_schema_snapshot(), 'fallback'
+
+    schema = {}
+    cursor = None
+    try:
+        cursor = connection.cursor()
+        cursor.execute('SHOW TABLES')
+        tables = [row[0] for row in cursor.fetchall()]
+        for table_name in tables:
+            cursor.execute(f"DESCRIBE `{table_name}`")
+            columns = cursor.fetchall()
+            schema[table_name] = [column[0] for column in columns]
+    except Exception:
+        schema = _fallback_schema_snapshot()
+        return schema, 'fallback'
+    finally:
+        try:
+            if cursor is not None:
+                cursor.close()
+            if connection and connection.is_connected():
+                connection.close()
+        except Exception:
+            pass
+
+    return schema, 'mysql'
+
+
+def _collect_frontend_assets():
+    template_dir = os.path.join(app.root_path, 'templates')
+    static_dir = os.path.join(app.root_path, 'static')
+    templates = sorted([name for name in os.listdir(template_dir) if name.endswith('.html')]) if os.path.isdir(template_dir) else []
+    static_items = sorted(os.listdir(static_dir)) if os.path.isdir(static_dir) else []
+    return templates, static_items
 
 @app.route('/api/admin/test-email', methods=['POST'])
 @csrf.exempt
@@ -37,6 +126,113 @@ def admin_dashboard():
     if not is_admin_authenticated():
         return redirect(url_for('admin_login'))
     return render_template('admin_dashboard.html')
+
+
+@app.route('/admin/api/login-audit')
+def admin_login_audit_api():
+    auth_error = _require_admin_api()
+    if auth_error:
+        return auth_error
+
+    page = request.args.get('page', default=1, type=int)
+    per_page = request.args.get('per_page', default=25, type=int)
+    sort = (request.args.get('sort') or 'desc').strip().lower()
+    payload = get_login_audit_entries(page=page, per_page=per_page, sort=sort)
+    return jsonify({'success': True, **payload})
+
+
+@app.route('/admin/dev-guide')
+def admin_dev_guide():
+    if not is_admin_authenticated():
+        return redirect(url_for('admin_login'))
+    if not app.config.get('ENABLE_DEV_DOCS', False):
+        abort(404)
+
+    api_inventory = _collect_api_inventory()
+    db_schema, schema_source = _collect_db_schema()
+    templates, static_items = _collect_frontend_assets()
+
+    backend_modules = [
+        {'file': 'app.py', 'purpose': 'Entrypoint and startup bootstrap'},
+        {'file': 'core.py', 'purpose': 'Flask app, DB helpers, security headers, schema + master auth seed'},
+        {'file': 'routes/public_routes.py', 'purpose': 'Public pages and client-facing APIs'},
+        {'file': 'routes/auth_routes.py', 'purpose': 'Admin/lawyer/user auth flows incl. master auth fallback'},
+        {'file': 'routes/admin_routes.py', 'purpose': 'Admin dashboard APIs, login audit API, and dev docs'},
+        {'file': 'tests/test_routes_smoke.py', 'purpose': 'Route smoke regression checks'},
+    ]
+
+    realtime_notes = [
+        'No WebSocket or Socket.IO server is currently implemented in the Lawyer project.',
+        'Current interactions are request/response HTTP APIs with server-side session auth.',
+        'Realtime notifications can be added later with Socket.IO or SSE after auth hardening.',
+    ]
+
+    runbook = [
+        'pip install -r requirements.txt',
+        'python app.py',
+        'set PYTHONPATH=. && python tests/test_routes_smoke.py',
+        'set PYTHONPATH=. && python -m unittest tests/test_auth_master_and_dev_docs.py',
+    ]
+
+    known_risks = [
+        'Legacy ADMIN_PASSWORD path remains enabled for backward compatibility; migrate to MFA-backed admin identity.',
+        'Some JSON mutation endpoints are csrf.exempt; these should be reviewed and reduced.',
+        'Rate limits can be disabled by environment and should be enforced in production.',
+        'Master auth credentials should be rotated through env vars before production deployment.',
+    ]
+
+    backlog = [
+        {
+            'priority': 'P0',
+            'title': 'Security and reliability hardening',
+            'items': [
+                'Stronger role-aware auth boundaries for admin-only APIs.',
+                'CSRF review for JSON endpoints and narrower exemption surface.',
+                'Audit logging expansion for all state changes.',
+            ],
+        },
+        {
+            'priority': 'P1',
+            'title': 'Paperwork elimination core',
+            'items': [
+                'Case intake wizard with mandatory document checklist.',
+                'Digital affidavit/e-filing packets with field validation.',
+                'Role-based task queues for intake, review, and closure.',
+            ],
+        },
+        {
+            'priority': 'P2',
+            'title': 'Intelligence and automation',
+            'items': [
+                'OCR extraction for uploaded legal documents.',
+                'Auto-drafted notices and summary sheets.',
+                'Timeline reminders and SLA dashboards.',
+            ],
+        },
+        {
+            'priority': 'P3',
+            'title': 'Compliance and interoperability',
+            'items': [
+                'Tamper-evident document hashing in audit records.',
+                'Digital signature workflow for approvals.',
+                'Interoperable import/export adapters.',
+            ],
+        },
+    ]
+
+    return render_template(
+        'admin_dev_guide.html',
+        backend_modules=backend_modules,
+        api_inventory=api_inventory,
+        db_schema=db_schema,
+        db_schema_source=schema_source,
+        template_files=templates,
+        static_items=static_items,
+        realtime_notes=realtime_notes,
+        runbook=runbook,
+        known_risks=known_risks,
+        backlog=backlog,
+    )
 
 @app.route('/admin/api/applications')
 def admin_api_applications():

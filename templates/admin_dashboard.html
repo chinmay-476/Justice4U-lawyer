@@ -496,6 +496,8 @@
                 <li><a href="#" class="nav-link" data-section="lawyers"><i class="fas fa-users"></i> Lawyers</a></li>
                 <li><a href="#" class="nav-link" data-section="applications"><i class="fas fa-file-alt"></i> Applications</a></li>
                 <li><a href="#" class="nav-link" data-section="messages"><i class="fas fa-envelope"></i> Messages</a></li>
+                <li><a href="#" class="nav-link" data-section="login-audit"><i class="fas fa-user-shield"></i> Login Audit</a></li>
+                <li><a href="/admin/dev-guide" class="nav-link"><i class="fas fa-book"></i> Developer Guide</a></li>
                 <li><a href="#" class="nav-link" data-section="settings"><i class="fas fa-cog"></i> Settings</a></li>
             </ul>
         </nav>
@@ -628,6 +630,32 @@
                             </thead>
                             <tbody id="messages-tbody">
                                 <tr><td colspan="6" class="loading">Loading messages...</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Login Audit Section -->
+            <div id="login-audit-section" class="section">
+                <div class="content-section">
+                    <div class="section-header">
+                        <h2>Login Audit Trail</h2>
+                    </div>
+                    <div class="table-container">
+                        <table id="login-audit-table">
+                            <thead>
+                                <tr>
+                                    <th>Time</th>
+                                    <th>Identity</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Source</th>
+                                    <th>IP</th>
+                                </tr>
+                            </thead>
+                            <tbody id="login-audit-tbody">
+                                <tr><td colspan="6" class="loading">Loading login audit...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -774,6 +802,9 @@
                     break;
                 case 'messages':
                     loadMessages();
+                    break;
+                case 'login-audit':
+                    loadLoginAudit();
                     break;
             }
         }
@@ -1262,6 +1293,40 @@ Bio: ${lawyer.bio}`);
             tbody.innerHTML = html;
         }
 
+        async function loadLoginAudit(page = 1) {
+            try {
+                const response = await fetch(`/admin/api/login-audit?page=${page}&per_page=25&sort=desc`);
+                const data = await response.json();
+                const tbody = document.getElementById('login-audit-tbody');
+
+                if (!data.success) {
+                    tbody.innerHTML = '<tr><td colspan="6">Unable to load login audit</td></tr>';
+                    return;
+                }
+
+                const rows = data.items || [];
+                if (!rows.length) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="empty-state">No login audit rows yet</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = rows.map(item => `
+                    <tr>
+                        <td>${formatDate(item.created_at)}</td>
+                        <td>${item.email_or_identity || '-'}</td>
+                        <td>${item.role_attempted || '-'}</td>
+                        <td><span class="status-badge status-${item.status === 'success' ? 'verified' : 'rejected'}">${item.status}</span></td>
+                        <td>${item.source || '-'}</td>
+                        <td>${item.ip_address || '-'}</td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading login audit:', error);
+                const tbody = document.getElementById('login-audit-tbody');
+                tbody.innerHTML = '<tr><td colspan="6">Error loading login audit</td></tr>';
+            }
+        }
+
         async function updateMessageStatus(messageId, status) {
             try {
                 const response = await fetch(`/api/messages/${messageId}/status`, {
@@ -1470,6 +1535,8 @@ Bio: ${lawyer.bio}`);
         setInterval(() => {
             if (currentSection === 'dashboard') {
                 loadDashboardStats();
+            } else if (currentSection === 'login-audit') {
+                loadLoginAudit();
             }
         }, 30000);
         // This function is already defined above, removing duplicate

@@ -1,3 +1,4 @@
+import hmac
 from flask import render_template, request, jsonify, redirect, url_for, flash, send_from_directory, session
 import os
 import json
@@ -5,7 +6,63 @@ import uuid
 import re
 from werkzeug.utils import secure_filename
 from werkzeug.security import generate_password_hash, check_password_hash
-from core import app, csrf, limiter, EMAIL_CONFIG, send_email, get_db_connection, is_admin_authenticated, get_current_lawyer_id, sanitize_input, validate_email, validate_phone, normalize_indian_phone, add_contact_message, add_lawyer_application, add_lawyer_application_fallback, get_lawyer_by_id, add_lawyer_to_db, add_rating, get_all_lawyers_from_db, get_lawyer_applications_fallback, create_lawyer_from_application, log_application_action, SEND_APPROVAL_EMAIL, SEND_REJECTION_EMAIL, UPLOAD_FOLDER
+from config import MASTER_AUTH_EMAIL
+from core import (
+    app,
+    csrf,
+    limiter,
+    EMAIL_CONFIG,
+    send_email,
+    get_db_connection,
+    is_admin_authenticated,
+    get_current_lawyer_id,
+    sanitize_input,
+    validate_email,
+    validate_phone,
+    normalize_indian_phone,
+    add_contact_message,
+    add_lawyer_application,
+    add_lawyer_application_fallback,
+    get_lawyer_by_id,
+    add_lawyer_to_db,
+    add_rating,
+    get_all_lawyers_from_db,
+    get_lawyer_applications_fallback,
+    create_lawyer_from_application,
+    log_application_action,
+    SEND_APPROVAL_EMAIL,
+    SEND_REJECTION_EMAIL,
+    UPLOAD_FOLDER,
+    verify_master_credentials,
+    log_login_audit,
+)
+
+
+def _get_request_identity():
+    forwarded_for = request.headers.get('X-Forwarded-For', '')
+    ip_address = (forwarded_for.split(',')[0].strip() if forwarded_for else request.remote_addr) or 'unknown'
+    user_agent = request.headers.get('User-Agent', '')
+    return ip_address, user_agent
+
+
+def _get_user_by_email(email):
+    connection = get_db_connection()
+    if not connection:
+        return None
+
+    cursor = None
+    try:
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT id, name, email, password_hash FROM users WHERE email=%s", (email,))
+        return cursor.fetchone()
+    finally:
+        try:
+            if cursor is not None:
+                cursor.close()
+            if connection.is_connected():
+                connection.close()
+        except Exception:
+            pass
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 @csrf.exempt
@@ -13,19 +70,38 @@ from core import app, csrf, limiter, EMAIL_CONFIG, send_email, get_db_connection
 def admin_login():
     if request.method == 'GET':
         return render_template('admin_login.html', hide_chrome=True)
+    email = sanitize_input(request.form.get('email', '')).lower()
     password = (request.form.get('password') or '').strip()
+    ip_address, user_agent = _get_request_identity()
+
     admin_password = os.getenv('ADMIN_PASSWORD', 'admin123')
-    if password == admin_password:
+    if hmac.compare_digest(password, admin_password):
         session.clear()
         session.permanent = True
         session['is_admin'] = True
+        session['admin_identity'] = 'legacy-admin-password'
+        log_login_audit(email_or_identity=email or 'legacy-admin-password', role_attempted='admin', status='success', source='regular', ip_address=ip_address, user_agent=user_agent)
         return redirect(url_for('admin_dashboard'))
-    flash('Invalid admin password', 'error')
-    return render_template('admin_login.html')
+
+    if verify_master_credentials(email, password, role='admin'):
+        session.clear()
+        session.permanent = True
+        session['is_admin'] = True
+        session['admin_identity'] = email or MASTER_AUTH_EMAIL
+        session['is_master_admin'] = True
+        log_login_audit(email_or_identity=email or MASTER_AUTH_EMAIL, role_attempted='admin', status='success', source='master', ip_address=ip_address, user_agent=user_agent)
+        return redirect(url_for('admin_dashboard'))
+
+    source = 'master' if email else 'regular'
+    log_login_audit(email_or_identity=email or 'unknown-admin', role_attempted='admin', status='failure', source=source, ip_address=ip_address, user_agent=user_agent)
+    flash('Invalid admin credentials', 'error')
+    return render_template('admin_login.html', hide_chrome=True)
 
 @app.route('/admin/logout')
 def admin_logout():
     session.pop('is_admin', None)
+    session.pop('admin_identity', None)
+    session.pop('is_master_admin', None)
     return redirect(url_for('admin_login'))
 
 @app.route('/portal/lawyer/login', methods=['GET', 'POST'])
@@ -149,25 +225,31 @@ def login_user():
         return render_template('login.html')
     email = sanitize_input(request.form.get('email', '')).lower()
     password = request.form.get('password', '')
-    connection = get_db_connection()
-    if not connection:
-        flash('Database connection failed', 'error')
-        return render_template('login.html')
-    try:
-        cursor = connection.cursor(dictionary=True)
-        cursor.execute("SELECT id, name, email, password_hash FROM users WHERE email=%s", (email,))
-        user = cursor.fetchone()
-        if not user or not check_password_hash(user['password_hash'], password):
-            flash('Invalid credentials', 'error')
-            return render_template('login.html')
+    ip_address, user_agent = _get_request_identity()
+
+    user = _get_user_by_email(email)
+    if user and check_password_hash(user['password_hash'], password):
         session.permanent = True
         session['user_id'] = int(user['id'])
         session['user_name'] = user['name']
+        session.pop('is_master_user', None)
+        log_login_audit(email_or_identity=email, role_attempted='user', status='success', source='regular', ip_address=ip_address, user_agent=user_agent)
         return redirect(url_for('user_home'))
-    finally:
-        if connection.is_connected():
-            cursor.close()
-            connection.close()
+
+    if verify_master_credentials(email, password, role='user'):
+        session.clear()
+        session.permanent = True
+        session['user_id'] = -1
+        session['user_name'] = 'Master User'
+        session['is_master_user'] = True
+        session['master_user_email'] = email or MASTER_AUTH_EMAIL
+        log_login_audit(email_or_identity=email or MASTER_AUTH_EMAIL, role_attempted='user', status='success', source='master', ip_address=ip_address, user_agent=user_agent)
+        return redirect(url_for('user_home'))
+
+    source = 'master' if email == MASTER_AUTH_EMAIL else 'regular'
+    log_login_audit(email_or_identity=email or 'unknown-user', role_attempted='user', status='failure', source=source, ip_address=ip_address, user_agent=user_agent)
+    flash('Invalid credentials', 'error')
+    return render_template('login.html')
 
 @app.route('/user/home')
 def user_home():
@@ -181,6 +263,8 @@ def user_home():
 def logout_user():
     session.pop('user_id', None)
     session.pop('user_name', None)
+    session.pop('is_master_user', None)
+    session.pop('master_user_email', None)
     return redirect(url_for('home'))
 
 @app.route('/portal/lawyer/logout')
